@@ -1,0 +1,10 @@
+from pickPoints import *
+
+p = pickPoints()
+
+F:\ExpDataSamples\20221100_SteelFrames\20221109\Calibration\DSC06874.JPG
+850
+F:\ExpDataSamples\20221100_SteelFrames\20221109\Calibration\DSC06874_calib.csv
+F:\ExpDataSamples\20221100_SteelFrames\20221109\Calibration\DSC06874_calibPoints.JPG
+
+

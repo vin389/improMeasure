@@ -1,0 +1,25 @@
+# 
+# cd /d d:\yuansen\impro\impropy\impropy
+# python impropyMain.py < examples\triangulatePoints2\runPythonRedirect.cin
+
+calibChessboardStereo
+
+# File list of calibration images
+examples/calibChessboardStereo/cam5_calib/G*.JPG
+# save file list (or . to not to save)
+.
+# File list of calibration images
+examples/calibChessboardStereo/cam6_calib/G*.JPG
+# save file list (or . to not to save)
+.
+# pattern size (separated by a comma)
+7 , 12
+# cell size (separated by a comma)
+21.31 , 21.35
+# calibration flags (separated by a comma)
+201, 201
+# output directory
+examples/calibChessboardStereo/cam5_cam6_stereoCalib/
+
+# 
+quit

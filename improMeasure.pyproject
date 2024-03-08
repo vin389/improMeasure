@@ -1,0 +1,3 @@
+{
+    "files": ["improMassOptFlow.py","improUiMlUtils.py","improUiFileList.py","improUiPreview.py","calibChessboardStereo.py","improMisc.py","improShowMassTracking.py","form.ui","mainwindow.py","improFeatureMatch.py"]
+}

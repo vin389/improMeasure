@@ -1,0 +1,7 @@
+# photoID  daqStep. For example 5 200  means photo 5 maps to daq step 200. Both steps are 1 based. ,
+1,1
+7,94
+15,309
+27,506
+35,712
+50,920
