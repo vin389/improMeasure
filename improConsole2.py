@@ -16,6 +16,7 @@ from icf_drawFields import icf_drawFields
 from icf_wallMonitor_v3 import icf_wallMonitor_v3
 from icf_wallMonitor_v4 import icf_wallMonitor_v4
 from calcStrain3d import icf_calcQ4Strain3d
+from icf_trackPoints import icf_trackPoints
 
 class improConsole2():
     # def load_config(self): 
@@ -147,6 +148,8 @@ class improConsole2():
             "Pick N points and templates from an image by mouse. Save csv file and image file.")
         self.add_function('xyanim', icf_drawXyAnimation,
             "Converts your x-y data to images that can generate a video")
+        self.add_function('trackPoints', icf_trackPoints,
+            "Tracks the points of interests (POIs) by template match method")
 #        self.add_function('wallMonitor2', icf_wallMonitor_v2,
 #            "Runs wall crack and shear strain measurement")
 
