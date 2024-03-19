@@ -67,6 +67,7 @@ def icf_trackPoints(
         try:
             with open(_ctrlpFile) as f:
                 ctrlp = np.loadtxt((x.replace(',',' ') for x in f))
+                npoi = ctrlp.shape[0]
         except:
             pass
     else:
@@ -139,9 +140,8 @@ def icf_trackPoints(
     img_tmplt = cv.imread(files[tmplt_step])
     toc = time.time()
     print("# It took %f sec. to read images (Step 0)." % (toc - tic))
-    for icam in range(2):
-        for ipoint in range(3):
-            ctrlPoints2d[0, icam, ipoint, :] = ctrlps[icam][ipoint, 0:2]
+    for ipoint in range(npoi):
+        ctrlPoints2d[0, ipoint, :] = ctrlp[ipoint, 0:2]
 
     # estimated maximum displacements 
     # (for estimating size of template-match search region)
@@ -177,7 +177,7 @@ def icf_trackPoints(
             if iWaitFile >= 1:
                 time.sleep(1.0)
             break
-        img = cv.imread(files1[istep])
+        img = cv.imread(files[istep])
         
         # tracking 
         for ipoint in range(npoi):
@@ -188,7 +188,7 @@ def icf_trackPoints(
                            - ctrlp[ipoint][0]\
                            + ctrlPoints2d[tmplt_step, ipoint, 0])
             rect_y = round(ctrlp[ipoint][3]\
-                           - ctrlp[icam][ipoint, 1]\
+                           - ctrlp[ipoint, 1]\
                            + ctrlPoints2d[tmplt_step, ipoint, 1])
             rect_w = int(ctrlp[ipoint, 4])
             rect_h = int(ctrlp[ipoint, 5])
@@ -275,8 +275,8 @@ def icf_trackPoints(
             ctrl_px = locx + srch_x + ctrlp[ipoint][0] - rect_x
             ctrl_py = locy + srch_y + ctrlp[ipoint][1] - rect_y
             # 
-            ctrlPoints2d[istep, icam, ipoint, 0] = ctrl_px
-            ctrlPoints2d[istep, icam, ipoint, 1] = ctrl_py
+            ctrlPoints2d[istep, ipoint, 0] = ctrl_px
+            ctrlPoints2d[istep, ipoint, 1] = ctrl_py
         # end of tracking ctrlPoints           
         toc = time.time()
     

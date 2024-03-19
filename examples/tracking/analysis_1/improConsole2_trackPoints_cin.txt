@@ -1,0 +1,11 @@
+#
+#
+trackPoints
+# file path
+D:\yuansen\ImPro\improMeasure\examples\tracking\*.JPG
+# POI file
+D:\yuansen\ImPro\improMeasure\examples\tracking\analysis_1\my_poi.txt
+# which tracking method. 1: template match
+1
+
+
