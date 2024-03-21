@@ -164,10 +164,23 @@ def icf_trackPoints(
         _wdir = input2()
 
 
+
+    # preparation of the big table of output (_wdir + 'big_table.csv')
+    # Big table lists data/parameters are different at each step.
+    big_table_fname = os.path.join(_wdir, 'big_table.csv')
+    if os.path.exists(big_table_fname):
+        os.remove(big_table_fname)
+    with open(big_table_fname, 'a') as f:
+        f.write('# time_step, T_imread, ') # [0, 1, 2]
+        for i in range(npoi):
+            f.write('X%d, Y%d, ' % (i+1, i+1))
+        f.write('\n')
+
     # start of the loop
     for istep in range(nstep):
         # wait for file
         iWaitFile = 0
+        tic_imread = time.time()
         while True:
             if os.path.exists(files[istep]) == False:
                 print("# Waiting for %s" % files[istep])
@@ -178,7 +191,12 @@ def icf_trackPoints(
                 time.sleep(1.0)
             break
         img = cv.imread(files[istep])
+        toc_imread = time.time()
         
+        # output to file 
+        with open(big_table_fname, 'a') as f:
+            f.write('%d , %f, ' % (istep+1, toc_imread - tic_imread) )
+
         # tracking 
         for ipoint in range(npoi):
             # calculate rect of template (rect_x, rect_y, rect_w, rect_h)
@@ -234,10 +252,6 @@ def icf_trackPoints(
             tmResMinMaxLoc = cv.minMaxLoc(tmRes)
             toc_tm = time.time()
             locxi, locyi = tmResMinMaxLoc[3]
-#                print('Template match(step %d). C%d P%d:' %
-#                      (istep + 1, icam+1, ipoint+1))
-#                print('# It took %f sec. to do template match (step %d, cam %d, point %d).'
-#                      % (toc_tm - tic_tm, istep+1, icam+1, ipoint+1))
                 # show 
             showTmpltMatched = False
             if showTmpltMatched:
@@ -277,9 +291,13 @@ def icf_trackPoints(
             # 
             ctrlPoints2d[istep, ipoint, 0] = ctrl_px
             ctrlPoints2d[istep, ipoint, 1] = ctrl_py
+            # output to file 
+            with open(big_table_fname, 'a') as f:
+                f.write('%f , %f, ' % (ctrl_px, ctrl_py) )
         # end of tracking ctrlPoints           
-        toc = time.time()
-    
-    
+        with open(big_table_fname, 'a') as f:
+            f.write('\n')
+    # end loop 
     
     return
+
