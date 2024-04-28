@@ -17,6 +17,7 @@ from icf_wallMonitor_v3 import icf_wallMonitor_v3
 from icf_wallMonitor_v4 import icf_wallMonitor_v4
 from calcStrain3d import icf_calcQ4Strain3d
 from icf_trackPoints import icf_trackPoints
+from calibChessboard import calibChessboard
 
 class improConsole2():
     # def load_config(self): 
@@ -130,6 +131,8 @@ class improConsole2():
     def add_functions(self):
         self.add_function('tkCalib', tkCalib, 
             "GUI for single-image calibration.")
+        self.add_function('calibChess', calibChessboard, 
+            "Calibrates a camera by chessboard corners.")
         self.add_function('wallMoni3', icf_wallMonitor_v3,
             "Runs wall crack and shear strain measurement")
         self.add_function('wallMoni4', icf_wallMonitor_v4,

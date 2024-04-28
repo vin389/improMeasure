@@ -1,12 +1,14 @@
 import os, sys
 import time, datetime
-import tkinter.filedialog
 import tkinter as tk
+import tkinter.filedialog
+import tkinter.messagebox
+#import tkinter.scrolledtext
 import numpy as np
 import cv2 as cv
 
 from improCalib import newArrayByMapping, countCalibPoints
-from improMisc import uigetfile, uiputfile
+from improMisc import uigetfile, uiputfile, uigetfiles_tupleFullpath
 from improStrings import npFromString, stringFromNp, npFromTupleNp
 from drawPoints import drawPoints
 from imshow2 import imshow2
@@ -17,7 +19,6 @@ def tkCalib_printMessage(msg: str):
     strfNow = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print("%s: %s" % (strfNow, msg))
     return
-
 
 def tkCalib():
 #    camParams = np.zeros(14, dtype=np.float64)
@@ -41,12 +42,36 @@ def tkCalib():
     global win
     win = tk.Tk()
     win.geometry("1600x900")
+    frame1 = tk.Frame(win)
+    frame1.pack(side=tk.LEFT, anchor='n')
+    frame2 = tk.Frame(win)
+    frame2.pack(side=tk.LEFT, anchor='n')
+    frame3 = tk.Frame(win)
+    frame3.pack(side=tk.LEFT, anchor='n')
+    frame4 = tk.Frame(win)
+    frame4.pack(side=tk.LEFT, anchor='n')
 
     # #######################################################
     # Button and edit text of [3D coordinates (World coord.)]
     # #######################################################
-    # 3D coordinates
-    #   button '3D coordinates' as a label
+    # button of 3D coordinates (World coord.)
+    btCoord3d = tk.Button(frame1, height=1, text='3D coordinates (World coord.)')
+    btCoord3d.pack()
+    # edit text of 3D coordinates
+    edCoord3d = tk.Text(frame1, width=40, height=3, undo=True, 
+                        autoseparators=True, maxundo=-1)
+    edCoord3d.pack()
+    #   set initial text for demonstration
+    try:
+        theMat = np.loadtxt(os.path.join(os.getcwd(), 'tkCalib_init_coord3d.npy'))
+        theStr = stringFromNp(theMat, ftype='txtf', sep='\t')
+        edCoord3d.delete(0., tk.END)
+        edCoord3d.insert(0., theStr)
+    except:
+        tkCalib_printMessage("# Warning: Failed to load tkCalib_init_coord3d.npy")
+        edCoord3d.delete(0., tk.END)
+        edCoord3d.insert(0., ' 0 0 0 \n 1 0 0 \n 1 1 0 \n 0 1 0 \n nan nan nan')  
+    # button command function 
     def btCoord3d_clicked():
         strPoints3d = edCoord3d.get(0., tk.END)
         try:
@@ -82,29 +107,29 @@ def tkCalib():
                     strValidPoints += ' %d' % i
             tkCalib_printMessage(strValidPoints)
         return
-    
-    btCoord3d = tk.Button(win, text='3D coordinates (World coord.)', \
-                          command=btCoord3d_clicked)
-    btCoord3d.grid(row=0, column=0)
-    #   edit text with text height of 5
-    edCoord3d = tk.Text(win, width=40, height=4, undo=True, autoseparators=True, maxundo=-1)
-    edCoord3d.grid(row=1, rowspan=4, column=0)
-    #   set initial text for demonstration
-    try:
-        theMat = np.loadtxt(os.path.join(os.getcwd(), 'tkCalib_init_coord3d.npy'))
-        theStr = stringFromNp(theMat, ftype='txtf', sep='\t')
-        edCoord3d.delete(0., tk.END)
-        edCoord3d.insert(0., theStr)
-    except:
-        tkCalib_printMessage("# Warning: Failed to load tkCalib_init_coord3d.npy")
-        edCoord3d.delete(0., tk.END)
-        edCoord3d.insert(0., ' 0 0 0 \n 1 0 0 \n 1 1 0 \n 0 1 0 \n nan nan nan')  
-
+    # set button command function 
+    btCoord3d.configure(command=btCoord3d_clicked)
     # #######################################################
     # Button and edit text of [Image 2D coordinates]
     # #######################################################
-    # Image (2D) coordinates
-    #   button 'Image 2D coordinates' as a label
+    # button of image coordinates
+    btCoordImg = tk.Button(frame1, text='Image 2D coordinates')
+    btCoordImg.pack()
+    # edit text of image coordinates
+    edCoordImg = tk.Text(frame1, width=40, height=3, undo=True, 
+                         autoseparators=True, maxundo=-1)
+    edCoordImg.pack()
+    #   set initial text for demonstration
+    edCoordImg.delete(0., tk.END)
+    #   set initial text for demonstration
+    try:
+        theMat = np.loadtxt(os.path.join(os.getcwd(), 'tkCalib_init_coordImg.npy'))
+        theStr = stringFromNp(theMat, sep='\t')
+        edCoordImg.insert(0., theStr)
+    except:
+        tkCalib_printMessage("# Warning: Failed to load tkCalib_init_coordImg.npy")
+        edCoordImg.insert(0., '1. 1. \n 2. 2. \nnan nan \n 1. 2. \n 3. 3.')
+    # button command function
     def btCoordImg_clicked():
         strPoints3d = edCoord3d.get(0., tk.END)
         strPointsImg= edCoordImg.get(0., tk.END)
@@ -140,101 +165,80 @@ def tkCalib():
                     strValidPoints += ' %d' % i
             tkCalib_printMessage(strValidPoints)
         return
-    btCoordImg = tk.Button(win, text='Image 2D coordinates',\
-                           command=btCoordImg_clicked)
-    btCoordImg.grid(row=5, column=0)
-    #   edit text with text height of 5
-    edCoordImg = tk.Text(win, width=40, height=3, undo=True, autoseparators=True, maxundo=-1)
-    edCoordImg.grid(row=6, rowspan=3, column=0)
-    #   set initial text for demonstration
-    edCoordImg.delete(0., tk.END)
-    #   set initial text for demonstration
-    try:
-        theMat = np.loadtxt(os.path.join(os.getcwd(), 'tkCalib_init_coordImg.npy'))
-        theStr = stringFromNp(theMat, sep='\t')
-        edCoordImg.insert(0., theStr)
-    except:
-        tkCalib_printMessage("# Warning: Failed to load tkCalib_init_coordImg.npy")
-        edCoordImg.insert(0., '1. 1. \n 2. 2. \nnan nan \n 1. 2. \n 3. 3.')
-
-    
+    # set command     
+    btCoordImg.configure(command=btCoordImg_clicked)  
     # #######################################################
     # Button of [Select calibration image ...]
     # #######################################################
-    # Calibration image
-    #   file path text
-    edFile = tk.Entry(win, width=40)
-    edFile.grid(row=10, column=0)
+    btFile = tk.Button(frame1, text='Select calibration image ...')
+    btFile.pack()
+    edFile = tk.Text(frame1, width=40, height=2)
+    edFile.pack()
     #   set initial text for demonstration
     try:
         tfile = open(os.path.join(os.getcwd(), 'tkCalib_init_imgFile.txt'), "r")
         fname = tfile.read()
         tfile.close()
-        edFile.delete(0, tk.END)
-        edFile.insert(0, fname)
+        edFile.delete(0., tk.END)
+        edFile.insert(0., fname)
     except:
-        edFile.insert(0, 'c:/images/calibration.bmp')
+        edFile.insert(0., 'c:/images/calibration.bmp')
         
     #   btFile 'Select image ...'
     def btFile_clicked():
         # select file
-        initDir = os.path.split(edFile.get())[0]
-        ufileDirFile = uigetfile(initialDirectory=initDir)
-        # if xfile is selected
-        if (type(ufileDirFile) == tuple or type(ufileDirFile) == list) and \
-            len(ufileDirFile) >= 2 and type(ufileDirFile[0]) == str:
-            # display full path of the selected file
-            edFile.delete(0, tk.END)
-            ufile = os.path.join(ufileDirFile[0], ufileDirFile[1])
-            edFile.insert(0, ufile)
-            btImgSize_clicked()
-            # # try to get the image size and display to edImgSize
-            # try:
-            #     img = cv.imread(ufile)
-            #     if type(img) != type(None) and img.shape[0] >= 1:
-            #         strSize = "%d  %d" % (img.shape[1], img.shape[0])
-            #         edImgSize.delete(0, tk.END)
-            #         edImgSize.insert(0, strSize)
-            #     else:
-            #         edImgSize.delete(0, tk.END)
-            #         edImgSize.insert(0, "(cannot open the file as an image)")
-            # except:
-            #     edImgSize.delete(0, tk.END)
-            #     edImgSize.insert(0, "(had exception when opening the file as an image)")
-                
+        fpath = edFile.get(0., tk.END)
+        try:
+            # fpath could be 1 file or multiple files
+            fpath = fpath.split()[0]
+        except:
+            pass
+        initDir = os.path.split(fpath)[0]
+        # get file(s) from file dialog (format: tuple of full paths)
+        uFullpaths = uigetfiles_tupleFullpath(initialDirectory=initDir)
+        # set edFile text to the full path of select file(s)
+        # if user selects 1 file, edFile text would be the full path of the file
+        # if user selects multiple files, edFile text would be full paths of all files and are separated with \n
+        # the image size would be set to that of the first file (index [0])
+        if uFullpaths:
+            edFile.delete(0., tk.END)
+            edFile.insert(0., '\n'.join(uFullpaths))
+            btImgSize_clicked()                
         return
-    btFile = tk.Button(win, text='Select calibration image ...', 
-                       command=btFile_clicked)
-    btFile.grid(row=9, column=0)
-
+    # set button command function 
+    btFile.configure(command=btFile_clicked)
+            
     # #######################################################
-    # Button of [Image size:]
+    # Button of [Image size:] (width height)
     # #######################################################
-    # Image size imgW imgH 
-    #   text (entry) of the image size imgW imgH
-    edImgSize = tk.Entry(win, width=40)
-    edImgSize.grid(row=12, column=0)
+    btImgSize = tk.Button(frame1, text='Image size: width height')
+    btImgSize.pack()
+    edImgSize = tk.Text(frame1, width=40, height=1)
+    edImgSize.pack()
     #   set initial text for demonstration
     try:
         theMat = np.loadtxt(os.path.join(os.getcwd(), 'tkCalib_init_imgSize.npy')).astype(int)
         theStr = stringFromNp(theMat, sep='\t')
-        edImgSize.delete(0, tk.END)
-        edImgSize.insert(0, theStr)
+        edImgSize.delete(0., tk.END)
+        edImgSize.insert(0., theStr)
     except:
         tkCalib_printMessage("# Warning: Cannot parse tkCalib_init_imgSize.npy")
-        edImgSize.delete(0, tk.END)
-        edImgSize.insert(0, '1920 1080')
-
+        edImgSize.delete(0., tk.END)
+        edImgSize.insert(0., '1920 1080')
+    # define functions
     def btImgSize_clicked():
         # try to open the image file and check the image size
         try:
-            fname = edFile.get()
+            fname = edFile.get(0., tk.END)
+            # if fname contains multiple files with delimiter of \n \t or space,
+            # we only take the first one.
+            fname = fname.split()[0]
             img = cv.imread(fname)
             if type(img) == np.ndarray and img.shape[0] >= 1:
                 imgH = img.shape[0]
                 imgW = img.shape[1]
-                edImgSize.delete(0, tk.END)
-                edImgSize.insert(0, '%d %d' % (imgW, imgH))
+                edImgSize.delete(0., tk.END)
+                edImgSize.insert(0., '%d %d' % (imgW, imgH))
             # update initial guess of cmat
             theStr = edCmatGuess.get(0., tk.END)
             theMat = npFromString(theStr).reshape((3,3))
@@ -246,29 +250,30 @@ def tkCalib():
                 edCmatGuess.insert(0., theStr)
         except:
             print("Cannot read the image file.")
-        strImgSize = edImgSize.get()
+        strImgSize = edImgSize.get(0., tk.END)
         print('Image size: ', strImgSize)
         return
-    
+    # imgSizeFromBt() determines image size. 
+    # imgSizeFromBt() is called by btCalib_clicked(), btDrawPoints_clicked(), 
+    #   btDrawPointsUndistort_clicked(), 
     def imgSizeFromBt():
-        strImgSize = edImgSize.get()
+        strImgSize = edImgSize.get(0., tk.END)
         imgSize = npFromString(strImgSize)
         if type(imgSize) != np.ndarray or imgSize.size != 2:
             print("# error: Image size is invalid (edit text is %s)" % (strImgSize))
             return None
         return imgSize.astype(int).flatten()
-
-    btImgSize = tk.Button(win, text='Image size: width height',
-                          command=btImgSize_clicked)
-    btImgSize.grid(row=11, column=0)
-#    btImgSize['state'] = tk.DISABLED
-
+    # set button command function
+    btImgSize.configure(command=btImgSize_clicked)
+    
     # #######################################################
     # Button of [Camera mat (init guess)]
     # #######################################################
-    # Initial guess of camera matrix 
-    edCmatGuess = tk.Text(win, width=40, height=2, undo=True, autoseparators=True, maxundo=-1)
-    edCmatGuess.grid(row=14, rowspan=2, column=0)
+    btCmatGuess = tk.Button(frame1, text='Camera mat (init guess)')
+    btCmatGuess.pack()
+    edCmatGuess = tk.Text(frame1, width=40, height=2, undo=True, 
+                          autoseparators=True, maxundo=-1)
+    edCmatGuess.pack()
     #   set initial text for demonstration
     try:
         theMat = np.loadtxt(os.path.join(os.getcwd(), 'tkCalib_init_cmatGuess.npy'))
@@ -280,6 +285,7 @@ def tkCalib():
         edCmatGuess.delete(0., tk.END)
         edCmatGuess.insert(0., ' 5000. 0 0 \n 0 5000. 0 \n 1999.5 1999.5 1')
     #   button 'Camera mat (init guess)' as a label
+    # defind button command function 
     def btCmatGuess_clicked():
         try:
             strCmatGuess = edCmatGuess.get(0., tk.END)
@@ -288,17 +294,16 @@ def tkCalib():
             cmatGuess = np.array([])
         print('Initial guess of camera matrix:\n', cmatGuess)
         return cmatGuess
-    btCmatGuess = tk.Button(win, text='Camera mat (init guess)',\
-                           command=btCmatGuess_clicked)
-    btCmatGuess.grid(row=13, column=0)
-
+    # set button command function 
+    btCmatGuess.configure(command=btCmatGuess_clicked)
     # #######################################################
     # Button of [Distortion coeff. (init guess)]
     # #######################################################
-    # Initial guess of distortion vector 
-    #   text (entry) of the image size imgW imgH
-    edDvecGuess = tk.Text(win, width=40, height=2, undo=True, autoseparators=True, maxundo=-1)
-    edDvecGuess.grid(row=17, rowspan=2, column=0)
+    btDvecGuess = tk.Button(frame1, text='Distortion coeff. (init guess)')
+    btDvecGuess.pack()
+    edDvecGuess = tk.Text(frame1, width=40, height=2, undo=True, 
+                          autoseparators=True, maxundo=-1)
+    edDvecGuess.pack()
     #   set initial text for demonstration
     try:
         theMat = np.loadtxt(os.path.join(os.getcwd(), 'tkCalib_init_dvecGuess.npy'))
@@ -309,8 +314,7 @@ def tkCalib():
         print("Warning: Cannot load tkCalib_init_dvecGuess.npy")
         edDvecGuess.delete(0., tk.END)
         edDvecGuess.insert(0., '0. 0. 0. 0.')
-
-    #   button 'Camera mat (init guess)' as a label
+    # define button command function 
     def btDvecGuess_clicked():
         strDvecGuess = edDvecGuess.get(0., tk.END)
         try:
@@ -319,10 +323,11 @@ def tkCalib():
             cdvecGuess = np.array([])
         print('Initial guess of distortion vector:\n', cdvecGuess)
         return cdvecGuess
-    btDvecGuess = tk.Button(win, text='Distortion coeff. (init guess)',\
-                           command=btDvecGuess_clicked)
-    btDvecGuess.grid(row=16, column=0)
+    # set button command function 
+    btDvecGuess.configure(command=btDvecGuess_clicked)
 
+    # #######################################################
+    # Frame 2
     # #######################################################
     # Checkbuttons of calibration flags
     # #######################################################
@@ -330,8 +335,8 @@ def tkCalib():
     #   allowing user to switch on/off of every flag
     #   once clicked, sum of flags is displaced 
     # init of flags 
-    edFlags = tk.Entry(win)
-    edFlags.grid(row=0, column=1)
+    edFlags = tk.Entry(frame2)
+    edFlags.pack(anchor=tk.W)
     edFlags.delete(0, tk.END)
     edFlags.insert(0, 'Calib flags: 0')
     edFlags.config(state= "disabled")
@@ -351,13 +356,12 @@ def tkCalib():
         edFlags.insert(0, 'Calib flags: %d' % (flags))
         edFlags.config(state= "disabled")
         return flags
-    # create checkbutton for flags
     for i in range(len(strFlags)):
         # generate statement string for creating checkbutton
         #   E.g., for i == 0
         #   "tk.Checkbutton(win, text='CALIB_USE_INTRINSIC_GUESS (0)',
         #                   command=ck_clicked, variable=ckValues[i])"
-        evalStr = "tk.Checkbutton(win, text='"
+        evalStr = "tk.Checkbutton(frame2, text='"
         evalStr += strFlags[i] + " (%d)" % (eval('cv.' + strFlags[i])) + "', "
         evalStr += "command=ck_clicked, "
         evalStr += "variable=ckValues[%d]" % (i) + ")"
@@ -366,27 +370,55 @@ def tkCalib():
         # create a checkbutton
         ckFlags.append(eval(evalStr)) # 
         # position a checkbutton
-        ckFlags[i].grid(row=i+1, column=1, sticky='W')
-    # set default flags: 
-    ckValues[0].set(1)  # to use intrinsic guess
-    ckValues[2].set(1)  # to fix principal point
-    ckValues[3].set(1)  # to zero tangent dist
-    ckValues[6].set(1)  # to fix k2
-    ckValues[7].set(1)  # to fix k3
-    ckValues[8].set(1)  # to fix k4
-    ckValues[9].set(1)  # to fix k5
-    ckValues[10].set(1) # to fix k6
+        ckFlags[i].pack(anchor=tk.W)
+    # disable some flag checks that is not supported in tkCalib
+    # as tkCalib assumes the distortion coefficients are k1, k2, p1, p2, ...
+    # rather than s1, s2, .... 
+    ckFlags[12].config(state= "disabled")
+    ckFlags[13].config(state= "disabled")
+    ckFlags[14].config(state= "disabled")
+    ckFlags[15].config(state= "disabled")
+    ckFlags[16].config(state= "disabled")
+    ckFlags[17].config(state= "disabled")
+    ckFlags[18].config(state= "disabled")
+    ckFlags[19].config(state= "disabled")
+    ckFlags[20].config(state= "disabled")
+    ckFlags[21].config(state= "disabled")
+    ckFlags[22].config(state= "disabled")
+
+    # set initial flags (edFlags)
+    try:
+        theMat = np.loadtxt(os.path.join(os.getcwd(), 'tkCalib_init_calibFlags.npy'))
+        theInt = int(theMat)
+        theStr = '%d' % theInt
+        edFlags.delete(0, tk.END)
+        edFlags.insert(0, theStr)
+        for i in range(len(strFlags)):
+            flagInt = eval('cv.' + strFlags[i])
+            if theInt & flagInt > 0:
+                ckValues[i].set(1)
+            else:
+                ckValues[i].set(0)
+    except:
+        tkCalib_printMessage('Cannot load calibration flags from file. Set default flags.')
+        ckValues[0].set(1)  # to use intrinsic guess
+        ckValues[2].set(1)  # to fix principal point
+        ckValues[3].set(1)  # to zero tangent dist
+        ckValues[6].set(1)  # to fix k2
+        ckValues[7].set(1)  # to fix k3
+        ckValues[8].set(1)  # to fix k4
+        ckValues[9].set(1)  # to fix k5
+        ckValues[10].set(1) # to fix k6
     ck_clicked()
-        
-        
+
     # #######################################################
-    # GUI grid column 2
-    # #######################################################
-    c2row = 0
+    # Frame 3
     # #######################################################
     # Button of [Calibrate camera]
     # #######################################################
-    # calibrate camera button
+    btCalib = tk.Button(frame3, text='Calibrate camera', width=40, height=2)
+    btCalib.pack()
+    # define button command function 
     def btCalib_clicked():
         print("# *** Button [Calibrate camera] clicked:\\")
         # get object points and image points as Numpy array format
@@ -478,19 +510,47 @@ def tkCalib():
         edOneCol.delete(0., tk.END)
         edOneCol.insert(0., strOneCol)
         return
-    
-    btCalib = tk.Button(win, text='Calibrate camera', width=40, height=2,
-                          command=btCalib_clicked)
-    btCalib.grid(row=c2row, column=2, rowspan=2); c2row += 2
-
+    # set button command function 
+    btCalib.configure(command=btCalib_clicked)
     # #######################################################
     # Button of [Draw projection image]
     # #######################################################
-    # 
+    btDrawPoints = tk.Button(frame3, text='Draw points and grid', width=40, height=1)
+    btDrawPoints.pack()
+    # #######################################################
+    # Text of grid coordinates (Xs, Ys, and Zs)
+    # #######################################################
+    edGridXs = tk.Entry(frame3, width=40)
+    edGridXs.pack()
+    edGridYs = tk.Entry(frame3, width=40)
+    edGridYs.pack()
+    edGridZs = tk.Entry(frame3, width=40)
+    edGridZs.pack()
+    #   set initial text for demonstration
+    try:
+        theMat = np.loadtxt(os.path.join(os.getcwd(), 'tkCalib_init_gridXs.npy'))
+        theStr = stringFromNp(theMat, sep='\t')
+        edGridXs.delete(0, tk.END)
+        edGridXs.insert(0, theStr)
+        theMat = np.loadtxt(os.path.join(os.getcwd(), 'tkCalib_init_gridYs.npy'))
+        theStr = stringFromNp(theMat, sep='\t')
+        edGridYs.delete(0, tk.END)
+        edGridYs.insert(0, theStr)
+        theMat = np.loadtxt(os.path.join(os.getcwd(), 'tkCalib_init_gridZs.npy'))
+        theStr = stringFromNp(theMat, sep='\t')
+        edGridZs.delete(0, tk.END)
+        edGridZs.insert(0, theStr)
+    except:
+        tkCalib_printMessage("# Warning: Cannot parse tkCalib_init_gridXs/Ys/Zs.npy")
+        edGridXs.delete(0, tk.END)
+        edGridYs.delete(0, tk.END)
+        edGridZs.delete(0, tk.END)
+    # define button command function
     def btDrawPoints_clicked():
         # get background image
         try:
-            fname = edFile.get()
+            fname = edFile.get(0., tk.END)
+            fname = fname.split()[0]
             print("The background file is %s " % fname)
             bkimg = cv.imread(fname)
             if type(bkimg) != type(None) and bkimg.shape[0] > 0:
@@ -502,31 +562,20 @@ def tkCalib():
         except:
             imgSize = imgSizeFromBt()
             bkimg = np.ones((imgSize[1], imgSize[0], 3), dtype=np.uint8) * 255            
-        # get cmat
-        strCmat = edCmat.get(0., tk.END)
-        cmat = npFromString(strCmat).reshape(3, 3)
-        # get dvec
-        strDvec = edDvec.get(0., tk.END)
-        dvec = npFromString(strDvec).reshape(1, -1)
+        # get intrinsic parameters
+        try:
+            # get cmat
+            strCmat = edCmat.get(0., tk.END)
+            cmat = npFromString(strCmat).reshape(3, 3)
+            # get dvec
+            strDvec = edDvec.get(0., tk.END)
+            dvec = npFromString(strDvec).reshape(1, -1)
+        except:
+#            tkCalib_printMessage("# Error: Cannot get calibrated result.")
+            tk.messagebox.showerror(title="Error", message="# Error: Cannot get calibrated result..")
+            return            
         # load image
         imgd = bkimg.copy()
-        # # get image points
-        # try:
-        #     strPointsImg= edCoordImg.get(0., tk.END)
-        #     points2d = npFromString(strPointsImg).reshape((-1, 2))
-        #     if points2d.shape[0] <= 0:
-        #         raise Exception('invalid_image_points')
-        #     # draw image points
-        #     color=[0,255,0]; 
-        #     markerType=cv.MARKER_CROSS
-        #     markerSize=40
-        #     thickness=4
-        #     lineType=8
-        #     imgd = drawPoints(imgd, points2d, color=color, markerType=markerType, 
-        #                       markerSize=markerSize,
-        #                       thickness=thickness, lineType=lineType, savefile='.')
-        # except:
-        #     tkCalib_printMessage('# No image point. Skipping plotting image points.')
         # get proected points
         try:
             strPrjPoints= edCoordPrj.get(0., tk.END)
@@ -580,9 +629,6 @@ def tkCalib():
                               thickness=thickness, lineType=lineType, savefile='.')
         except:
             tkCalib_printMessage('# No image point. Skipping plotting image points.')
-
-
-
         # show drawn image on the screen 
 #        winW = win.winfo_width()
 #        winH = win.winfo_height()
@@ -594,7 +640,9 @@ def tkCalib():
         except:
             None
         # ask if user wants to save the image to file or not
-        initDir = os.path.split(edFile.get())[0]
+        fname = edFile.get(0., tk.END)
+        fname = fname.split()[0]
+        initDir = os.path.split(fname)[0]
         ufileDirFile = uiputfile("Save image to file ...", initialDirectory=initDir)
         # if xfile is selected
         if (type(ufileDirFile) == tuple or type(ufileDirFile) == list) and \
@@ -604,46 +652,21 @@ def tkCalib():
             ufile = os.path.join(ufileDirFile[0], ufileDirFile[1])
             cv.imwrite(ufile, imgd)        
         return
-    btDrawPoints = tk.Button(win, text='Draw points', width=40, height=1,
-                          command=btDrawPoints_clicked)
-    btDrawPoints.grid(row=c2row, column=2, rowspan=1); c2row += 1
-
-    # #######################################################
-    # Text of grid coordinates (Xs, Ys, and Zs)
-    # #######################################################
-    edGridXs = tk.Entry(win, width=40)
-    edGridXs.grid(row=c2row, column=2, rowspan=1); c2row += 1;
-    edGridYs = tk.Entry(win, width=40)
-    edGridYs.grid(row=c2row, column=2, rowspan=1); c2row += 1;
-    edGridZs = tk.Entry(win, width=40)
-    edGridZs.grid(row=c2row, column=2, rowspan=1); c2row += 1;
-    #   set initial text for demonstration
-    try:
-        theMat = np.loadtxt(os.path.join(os.getcwd(), 'tkCalib_init_gridXs.npy'))
-        theStr = stringFromNp(theMat, sep='\t')
-        edGridXs.delete(0, tk.END)
-        edGridXs.insert(0, theStr)
-        theMat = np.loadtxt(os.path.join(os.getcwd(), 'tkCalib_init_gridYs.npy'))
-        theStr = stringFromNp(theMat, sep='\t')
-        edGridYs.delete(0, tk.END)
-        edGridYs.insert(0, theStr)
-        theMat = np.loadtxt(os.path.join(os.getcwd(), 'tkCalib_init_gridZs.npy'))
-        theStr = stringFromNp(theMat, sep='\t')
-        edGridZs.delete(0, tk.END)
-        edGridZs.insert(0, theStr)
-    except:
-        tkCalib_printMessage("# Warning: Cannot parse tkCalib_init_gridXs/Ys/Zs.npy")
-        edGridXs.delete(0, tk.END)
-        edGridYs.delete(0, tk.END)
-        edGridZs.delete(0, tk.END)
-
-
+    # set button command function
+    btDrawPoints.configure(command=btDrawPoints_clicked)
+    
     # #######################################################
     # Button of [Draw projection image on an undistorted image]
     # #######################################################
-    def btDrawPointsUndistort_clicked():
+    btDrawPointsUndist = tk.Button(frame3, text='Draw points and grid (undistorted)', 
+                                   width=40, height=1)
+    btDrawPointsUndist.pack()
+    # define button command function
+    def btDrawPointsUndist_clicked():
         try:
-            fname = edFile.get()
+            fname = edFile.get(0., tk.END)
+            # fname could be 1 file or multiple files. We get file [0]
+            fname = fname.split()[0]
             print("The background file is %s " % fname)
             bkimg = cv.imread(fname)
             if type(bkimg) != type(None) and bkimg.shape[0] > 0:
@@ -654,8 +677,8 @@ def tkCalib():
                 raise Exception("invalid_image")
         except:
             imgSize = imgSizeFromBt()
-            bkimg = np.ones((imgSize[1], imgSize[0], 3), dtype=np.uint8) * 255            
-        # get cmat and dvec, and undistort the image
+            bkimg = np.ones((imgSize[1], imgSize[0], 3), dtype=np.uint8) * 255 
+        # get cmat and dvec
         try:
             # get cmat
             strCmat = edCmat.get(0., tk.END)
@@ -663,10 +686,14 @@ def tkCalib():
             # get dvec
             strDvec = edDvec.get(0., tk.END)
             dvec = npFromString(strDvec).reshape(1, -1)
-            # undistort image
+        except:
+            tk.messagebox.showerror(title="Error", message="# Error: Cannot get calibrated result..")
+            return
+        # undistort the image
+        try:
             imgud = cv.undistort(bkimg, cmat, dvec)             
         except:
-            tkCalib_printMessage('# Error: Cannot undistort image')
+            tk.messagebox.showerror(title="Error", message="# Error: Failed to undistort image.")
             return
         # get image points and undistort the points
         try:
@@ -751,7 +778,10 @@ def tkCalib():
         except:
             None
         # ask if user wants to save the image to file or not
-        initDir = os.path.split(edFile.get())[0]
+        fname = edFile.get(0., tk.END)
+        # fname could be 1 file or multiple files. we get file [0]
+        fname = fname.split()[0]
+        initDir = os.path.split()[0]
         ufileDirFile = uiputfile("Save undistorted image to file ...", initialDirectory=initDir)
         # if xfile is selected
         if (type(ufileDirFile) == tuple or type(ufileDirFile) == list) and \
@@ -761,18 +791,20 @@ def tkCalib():
             ufile = os.path.join(ufileDirFile[0], ufileDirFile[1])
             cv.imwrite(ufile, imgud)        
         return
-    btDrawPointsUndist = tk.Button(win, text='Draw points (undistorted)', width=40, height=1,
-                          command=btDrawPointsUndistort_clicked)
-    btDrawPointsUndist.grid(row=c2row, column=2, rowspan=1); c2row += 1
-
+    # set button command function
+    btDrawPointsUndist.configure(command=btDrawPointsUndist_clicked)
     # #######################################################
     # Button of [Save camera parameters (rvec/tvec/fx/fy/cx/cy/k1.../tauy)]
     # #######################################################
+    btSaveCameraParameters = tk.Button(frame3, text='Save camera parameters', 
+                                       width=40, height=1)
+    btSaveCameraParameters.pack()
+    # define button command function 
     def btSaveCameraParameters_clicked():
         # get parameters
         try:
             # image size
-            strImgSize = edImgSize.get()
+            strImgSize = edImgSize.get(0., tk.END)
             imgSize = npFromString(strImgSize)
             # get rvec
             strRvec = edRvecs.get(0., tk.END)
@@ -790,7 +822,10 @@ def tkCalib():
             tkCalib_printMessage('# Error: btSaveCameraParameters_clicked: Cannot get parameters from edit texts')
         # save to file
         # ask if user wants to save the image to file or not
-        initDir = os.path.split(edFile.get())[0]
+        fname = edFile.get(0., tk.END)
+        # fname could be 1 file or multiple files. We get file [0]
+        fname = fname.split()[0]
+        initDir = os.path.split(fname)[0]
         ufileDirFile = uiputfile("Save camera parameters to file ...", initialDirectory=initDir)
         # if file is selected
         if (type(ufileDirFile) == tuple or type(ufileDirFile) == list) and \
@@ -801,123 +836,87 @@ def tkCalib():
             writeCamera(ufile, imgSize, rvec, tvec, cmat, dvec)
         #
         return
-    btSaveCameraParameters = tk.Button(win, text='Save camera parameters', width=40, height=1,
-                          command=btSaveCameraParameters_clicked)
-    btSaveCameraParameters.grid(row=c2row, column=2, rowspan=1); c2row += 1
-
+    # set button command function 
+    btSaveCameraParameters.configure(command=btSaveCameraParameters_clicked)
+    
+    # #######################################################
+    # Frame 4
     # #######################################################
     # Button and edit text of [Projected 2D coordinates]
     # #######################################################
-    # Projected image (2D) coordinates
-    #   button 'Projected 2D coordinates' as a label
-    def btCoordPrj_clicked():
-        return
-    btCoordPrj = tk.Button(win, text='Projected coordinates',\
-                           command=btCoordPrj_clicked)
-    btCoordPrj.grid(row=0, column=3)
+    btCoordPrj = tk.Button(frame4, text='Projected coordinates')
+    btCoordPrj.pack()
+    btCoordPrj.config(state='disabled')
     #   edit text with text height of 5
-    edCoordPrj = tk.Text(win, width=40, height=3, undo=True, autoseparators=True, maxundo=-1)
-    edCoordPrj.grid(row=1, rowspan=3, column=3)
+    edCoordPrj = tk.Text(frame4, width=40, height=3, undo=True, 
+                         autoseparators=True, maxundo=-1)
+    edCoordPrj.pack()
     #   set initial text for demonstration
     edCoordPrj.delete(0., tk.END)
-    
     # #######################################################
     # Button and edit text of [Projected errors]
     # #######################################################
-    # Projected errors
-    #   button 'Projected errors' as a label
-    def btPrjErrors_clicked():
-        return
-    btPrjErrors = tk.Button(win, text='Projected errors',\
-                           command=btPrjErrors_clicked)
-    btPrjErrors.grid(row=4, column=3)
+    btPrjErrors = tk.Button(frame4, text='Projected errors')
+    btPrjErrors.pack()
     #   edit text with text height of 5
-    edPrjErrors = tk.Text(win, width=40, height=3, undo=True, autoseparators=True, maxundo=-1)
-    edPrjErrors.grid(row=5, rowspan=3, column=3)
+    edPrjErrors = tk.Text(frame4, width=40, height=3, undo=True, 
+                          autoseparators=True, maxundo=-1)
+    edPrjErrors.pack()
     #   set initial text for demonstration
-    edPrjErrors.delete(0., tk.END)
-
+    edPrjErrors.delete(0., tk.END)    
     # #######################################################
     # Button of [Rvecs (calculated)]
     # #######################################################
-    # Calculated rvecs
-    edRvecs = tk.Text(win, width=40, height=2, undo=True, autoseparators=True, maxundo=-1)
-    edRvecs.grid(row=9, rowspan=2, column=3)
-    #   button 'Rvecs' as a label
-    def btRvecs_clicked():
-        return 
-    btRvecs = tk.Button(win, text='Rvecs.',\
-                           command=btRvecs_clicked)
-    btRvecs.grid(row=8, column=3)
-
+    btRvecs = tk.Button(frame4, text='Rvecs.')
+    btRvecs.pack()
+    edRvecs = tk.Text(frame4, width=40, height=2, undo=True, 
+                      autoseparators=True, maxundo=-1)
+    edRvecs.pack()
     # #######################################################
     # Button of [Tvecs (calculated)]
     # #######################################################
     # Calculated rvecs
-    edTvecs = tk.Text(win, width=40, height=2, undo=True, autoseparators=True, maxundo=-1)
-    edTvecs.grid(row=12, rowspan=2, column=3)
-    #   button 'Tvecs' as a label
-    def btTvecs_clicked():
-        return 
-    btTvecs = tk.Button(win, text='Tvecs.',\
-                           command=btTvecs_clicked)
-    btTvecs.grid(row=11, column=3)
-
-
+    btTvecs = tk.Button(frame4, text='Tvecs.')
+    btTvecs.pack()
+    edTvecs = tk.Text(frame4, width=40, height=2, undo=True, 
+                      autoseparators=True, maxundo=-1)
+    edTvecs.pack()
     # #######################################################
     # Button of [Camera mat (calculated)]
     # #######################################################
     # Calculated camera matrix 
-    edCmat = tk.Text(win, width=40, height=2, undo=True, autoseparators=True, maxundo=-1)
-    edCmat.grid(row=15, rowspan=2, column=3)
-    #   button 'Camera mat (init guess)' as a label
-    def btCmat_clicked():
-        return 
-    btCmat = tk.Button(win, text='Camera mat',\
-                           command=btCmat_clicked)
-    btCmat.grid(row=14, column=3)
-
+    btCmat = tk.Button(frame4, text='Camera mat')
+    btCmat.pack()
+    edCmat = tk.Text(frame4, width=40, height=2, undo=True, 
+                     autoseparators=True, maxundo=-1)
+    edCmat.pack()
     # #######################################################
     # Button of [Distortion coeff. (calculated)]
     # #######################################################
     # Calculated distortion vector 
-    edDvec = tk.Text(win, width=40, height=2, undo=True, autoseparators=True, maxundo=-1)
-    edDvec.grid(row=18, rowspan=2, column=3)
-    #   button 'Camera mat (init guess)' as a label
-    def btDvec_clicked():
-        return 
-    btDvec = tk.Button(win, text='Distortion coeff.',\
-                           command=btDvec_clicked)
-    btDvec.grid(row=17, column=3)
-
+    btDvec = tk.Button(frame4, text='Distortion coeff.')
+    btDvec.pack()
+    edDvec = tk.Text(frame4, width=40, height=2, undo=True, 
+                     autoseparators=True, maxundo=-1)
+    edDvec.pack()
     # #######################################################
     # Button of [Camera positions (calculated)]
     # #######################################################
-    # Calculated camera positions
-    edCampos = tk.Text(win, width=40, height=2, undo=True, autoseparators=True, maxundo=-1)
-    edCampos.grid(row=21, rowspan=2, column=3)
-    #   button 'Tvecs' as a label
-    def btCampos_clicked():
-        return 
-    btCampos = tk.Button(win, text='Camera position(s)',\
-                           command=btCampos_clicked)
-    btCampos.grid(row=20, column=3)
-    
+    btCampos = tk.Button(frame4, text='Camera position(s)')
+    btCampos.pack()
+    edCampos = tk.Text(frame4, width=40, height=2, undo=True, 
+                       autoseparators=True, maxundo=-1)
+    edCampos.pack()
     # #######################################################
-    # Button of [All-in-one-column]
+    # Button of [Parameters all-in-one-column]
     # #######################################################
-    # Calculated camera positions
-    edOneCol = tk.Text(win, width=40, height=2, undo=True, autoseparators=True, maxundo=-1)
-    edOneCol.grid(row=24, rowspan=2, column=3)
-    #   button 'Tvecs' as a label
-    def btOneCol_clicked():
-        return 
-    btOneCol = tk.Button(win, text='All-in-one-column',\
-                           command=btOneCol_clicked)
-    btOneCol.grid(row=23, column=3)
-
+    btOneCol = tk.Button(frame4, text='All-in-one-column')
+    btOneCol.pack()
+    edOneCol = tk.Text(frame4, width=40, height=2, undo=True, 
+                       autoseparators=True, maxundo=-1)
+    edOneCol.pack()
     # #######################################################
-    # Button of [Close]
+    # function of close()
     # #######################################################
     def winClose():
         # nonlocal
@@ -940,7 +939,7 @@ def tkCalib():
             tkCalib_printMessage("# Error: Cannot parse image (2D) coord.")
         # save current calibration image file
         try:
-            strCalibImg = edFile.get()
+            strCalibImg = edFile.get(0., tk.END)
             tfile = open(os.path.join(os.getcwd(), 'tkCalib_init_imgFile.txt'), "w")
             n = tfile.write(strCalibImg)
             tfile.close()
@@ -948,7 +947,7 @@ def tkCalib():
             tkCalib_printMessage("# Error: Cannot get calibration image file path")
         # save current image size
         try:
-            theStr = edImgSize.get()
+            theStr = edImgSize.get(0., tk.END)
             imgSize = npFromString(theStr).reshape((1,-1))
             imgSize = imgSize.astype(int)
             np.savetxt(os.path.join(os.getcwd(), 'tkCalib_init_imgSize.npy'), imgSize, fmt='%d')
@@ -970,6 +969,15 @@ def tkCalib():
             np.savetxt(os.path.join(os.getcwd(), 'tkCalib_init_dvecGuess.npy'), theMat)
         except:
             tkCalib_printMessage("# Error: Cannot parse distortion vec (guessed).")
+        # save current flags
+        try:
+            theStr = edFlags.get()
+            theStr = theStr[theStr.find(':')+1:]
+            theMat = npFromString(theStr).reshape((-1))
+            theMat = theMat.astype(np.int32)
+            np.savetxt(os.path.join(os.getcwd(), 'tkCalib_init_calibFlags.npy'), theMat, fmt='%i')
+        except:
+            tkCalib_printMessage("# Error: Cannot parse calibration flags.")
         # save current gridXs/Ys/Zs
         try:
             theStr = edGridXs.get()
@@ -985,7 +993,7 @@ def tkCalib():
             tkCalib_printMessage("# Error: Cannot parse grid coordinates (Xs/Ys/Zs).")
                 
         print("Window Closed. Returning rvec, tvec, cmat, and dvec")
-        imgSize = npFromString(edImgSize.get()).astype(int).flatten()
+        imgSize = npFromString(edImgSize.get(0., tk.END)).astype(int).flatten()
         try:
             rvec = npFromString(edRvecs.get(0., tk.END)).reshape(3, -1)
         except:
@@ -1003,16 +1011,18 @@ def tkCalib():
         except:
             dvec = np.array([], dtype=float)
         win.destroy()
-        return 
+        return     
     
-    # main window         
+    
+
+
     win.lift()
     win.attributes("-topmost", True)
     win.after_idle(win.attributes,'-topmost',False)
     win.protocol("WM_DELETE_WINDOW", winClose)
     win.mainloop()
 #    win.destroy()
-    return imgSize, rvec, tvec, cmat, dvec
+
 
 if __name__ == "__main__":
     camParams = tkCalib()

@@ -85,7 +85,6 @@ def calibChessboard(fileList=None, patternSize=None, cellSize=None,
         See OpenCV documentation of 
         calibrateCamera() for definition of flags. 
         If not given, this function uses OpenCV default values. 
-    saveObjPointsFile : 
     saveCamFile : str, optional
         The output file of camera parameters (in csv format)
         (rvec(length of 3), tvec(3), cmat(9), dvec(4,5,8,12,or 14))
@@ -140,7 +139,13 @@ def calibChessboard(fileList=None, patternSize=None, cellSize=None,
         cmat the camera matrix 
     dvec : np.ndarray (shape: n, n can be 4, 5, 8, 12, or 14)
         dvec the distortion coefficients (k1, k2, p1, p2[, k3, k4, k5, k6[
-            , s1, s2, s3, s4[, taux, tauy]]]) 
+            , s1, s2, s3, s4[, taux, tauy]]])
+    objPoints : np.ndarray(shape: (nPics, patternSize[0] * patternSize[1], 3))
+    imgPoints : np.ndarray(shape: (nPics, patternSize[0] * patternSize[1], 2))
+    prjPoints : np.ndarray(shape: (nPics, patternSize[0] * patternSize[1], 2))
+        prjPoints the projected points on the images
+    errEveryPoints : np.ndarray(shape: (nPics, patternSize[0] * patternSize[1], 2))
+        errPoints the error: prjPoints - imgPoints
         
     Example
     -------
@@ -242,11 +247,23 @@ def calibChessboard(fileList=None, patternSize=None, cellSize=None,
             'CALIB_USE_LU',
             'CALIB_USE_EXTRINSIC_GUESS']
         flags = 0
-        print("# Enter calibration flags one by one (0 or no, 1 for yes).")
-        for i in range(len(flagsStr)):
-            print("#  Do you want to use flag %s? " % (flagsStr[i]))
-            uInput = input3('',dtype=int,min=0,max=1)
-            flags = flags | (uInput * eval('cv.' + flagsStr[i]))
+        print("# Enter calibration flags. Some suggestions are:")
+        print("#   0: OpenCV default (calibrates fx, fy, cx, cy, k1, k2, p1, p2, k3).")
+        print("#   16385: (calibrates fx, fy, cx, cy, k1, k2, p1, p2, k3, k4, k5, k6).")
+        print("#   24705: (calibrates fx, fy, cx, cy, k1, k2, p1, p2,   , k4, k5).")
+        print("#   129: (calibrates fx, fy, cx, cy, k1, k2, p1, p2).")
+        print("#   193: (calibrates fx, fy, cx, cy, k1, p1, p2).")
+        print("#   201: (calibrates fx, fy, cx, cy, k1).")
+        print("#   205: (calibrates fx, fy, k1).")
+        print("#   207: (calibrates fx, k1).")
+        print("#   -1: Professional mode: Enter every flag one by one.")
+        flags = input3('',dtype=int,min=-1)
+        if flags < 0:
+            print("# Enter calibration flags one by one (0 or no, 1 for yes).")
+            for i in range(len(flagsStr)):
+                print("#  Do you want to use flag %s? " % (flagsStr[i]))
+                uInput = input3('',dtype=int,min=0,max=1)
+                flags = flags | (uInput * eval('cv.' + flagsStr[i]))
         print("# calibChessboard(): The calibration flags is %d" % (flags))
     # write camera parameters to file
     if type(saveCamFile) == type(None):
@@ -336,14 +353,16 @@ def calibChessboard(fileList=None, patternSize=None, cellSize=None,
         print("#   or enter dot (.) to skip saving.")
         saveCamFile = input2()
     if (saveCamFile != '.'):
-        writeCamera(saveCamFile, rvec[0], tvec[0], cmat, dvec)
+#        writeCamera(saveCamFile, rvec[0], tvec[0], cmat, dvec)
+        writeCamera(saveCamFile, imgSize, rvec[0], tvec[0], cmat, dvec)
         # write a camera file to each calibration image 
         # if the saveCamFile is MyCalib.csv, the output files would be 
         # MyCalib_calib_001.csv, MyCalib_calib_002.csv, ... and so on.
         for i in range(nFiles):
             saveCamFile_i = saveCamFile[0:-4] + "_calib_%03d" % (i + 1) \
                 + saveCamFile[-4:] 
-            writeCamera(saveCamFile_i, rvec[i], tvec[i], cmat, dvec)
+#            writeCamera(saveCamFile_i, rvec[i], tvec[i], cmat, dvec)
+            writeCamera(saveCamFile_i, imgSize, rvec[i], tvec[i], cmat, dvec)
     # write image (corner) points files
     if type(saveImgPointsFile) == type(None):
         print("# Enter file name that you want to save image points:")
@@ -554,3 +573,7 @@ def chessboardPts2d(nRows=7, nCols=7, cellSize=1.0):
             pts2d[i * nCols + j, 0] = i * cellSize
             pts2d[i * nCols + j, 1] = j * cellSize
     return pts2d
+
+
+if __name__ == '__main__':
+    test_calibChessboard_brb1()

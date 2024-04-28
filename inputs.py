@@ -34,7 +34,7 @@ def input2(prompt=""):
         thePrompt = ""
     else:
         thePrompt = "# " + prompt
-        print(thePrompt)
+        print(thePrompt, end='')
     # run the while loop of reading
     while(True):
         theInput = input()

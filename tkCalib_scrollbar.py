@@ -84,7 +84,7 @@ def tkCalib():
                           command=btCoord3d_clicked)
     btCoord3d.grid(row=0, column=0)
     #   edit text with text height of 5
-    edCoord3d = tk.scrolledtext.ScrolledText(win, width=40, height=4, undo=True, autoseparators=True, maxundo=-1, xscrollcommand=True, yscrollcommand=True)
+    edCoord3d = tk.scrolledtext.ScrolledText(win, width=40, height=4, undo=True, autoseparators=True, maxundo=-1)
     edCoord3d.grid(row=1, rowspan=4, column=0)
     #   set initial text for demonstration
     try:

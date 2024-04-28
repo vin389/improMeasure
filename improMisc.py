@@ -153,6 +153,33 @@ def uigetfile(fileDialogTitle='Select the file to open', initialDirectory='/', f
     return filePath, fileName
 
 
+def uigetfiles(fileDialogTitle='Select the files to open', initialDirectory='/', fileTypes = (('All files', '*.*'), ('TXT files', '*.txt;*.TXT'), ('JPG files', '*.jpg;*.JPG;*.JPEG;*.jpeg'), ('BMP files', '*.bmp;*.BMP'), ('Csv files', '*.csv'), ('opencv-supported images', '*.bmp;*.BMP;*.pbm;*.PBM;*.pgm;*.PGM;*.ppm;*.PPM;*.sr;*.SR;*.ras;*.RAS;*.jpeg;*.JPEG;*.jpg;*.JPG;*.jpe;*.JPE;*.jp2;*.JP2;*.tif;*.TIF;*.tiff;*.TIFF'), )):
+    filePaths = []
+    fileNames = []
+    tmpwin = tk.Tk()
+    tmpwin.lift()
+    #window.iconify()  # minimize to icon
+    #window.withdraw()  # hide it 
+    fullnames = filedialog.askopenfilenames(title=fileDialogTitle, initialdir=initialDirectory, filetypes=fileTypes)        
+    tmpwin.destroy()
+    for i in range(len(fullnames)):
+        ops = os.path.split(fullnames[i])
+        filePaths.append(ops[0])           
+        fileNames.append(ops[1])           
+    return filePaths, fileNames
+
+
+def uigetfiles_tupleFullpath(fileDialogTitle='Select the files to open', initialDirectory='/', fileTypes = (('All files', '*.*'), ('TXT files', '*.txt;*.TXT'), ('JPG files', '*.jpg;*.JPG;*.JPEG;*.jpeg'), ('BMP files', '*.bmp;*.BMP'), ('Csv files', '*.csv'), ('opencv-supported images', '*.bmp;*.BMP;*.pbm;*.PBM;*.pgm;*.PGM;*.ppm;*.PPM;*.sr;*.SR;*.ras;*.RAS;*.jpeg;*.JPEG;*.jpg;*.JPG;*.jpe;*.JPE;*.jp2;*.JP2;*.tif;*.TIF;*.tiff;*.TIFF'), )):
+    tmpwin = tk.Tk()
+    tmpwin.lift()
+    #window.iconify()  # minimize to icon
+    #window.withdraw()  # hide it 
+    fullnames = filedialog.askopenfilenames(title=fileDialogTitle, initialdir=initialDirectory, filetypes=fileTypes)        
+    tmpwin.destroy()
+    # fullnames is a tuple and could be ('c:/d1/f1.ext', 'c:/d1/f2.ext')
+    return fullnames
+
+
 def uiputfile(fileDialogTitle='Select the file to save', initialDirectory='/', fileTypes = (('All files', '*.*'), ('TXT files', '*.txt;*.TXT'), ('JPG files', '*.jpg;*.JPG;*.JPEG;*.jpeg'), ('BMP files', '*.bmp;*.BMP'), ('Csv files', '*.csv'), ('opencv-supported images', '*.bmp;*.BMP;*.pbm;*.PBM;*.pgm;*.PGM;*.ppm;*.PPM;*.sr;*.SR;*.ras;*.RAS;*.jpeg;*.JPEG;*.jpg;*.JPG;*.jpe;*.JPE;*.jp2;*.JP2;*.tif;*.TIF;*.tiff;*.TIFF'), )):
     filePath = []
     fileName = []    
