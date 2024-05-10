@@ -45,7 +45,7 @@ def animate(i):
   return line,
 
 # Animate the plot
-animation = FuncAnimation(fig, animate, frames=400, interval=0)
+animation = FuncAnimation(fig, animate, frames=400, interval=1)
 
 plt.legend()
 plt.show()

@@ -1,0 +1,75 @@
+# python improConsole2.py
+
+
+
+# Calibrate camera 1
+
+calibChess
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam1\*.JPG
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam1_results\calib_cam1_files.txt
+(7, 12)
+(21.31, 21.35)
+# flags
+201
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam1_results\calib_cam1_parameters.txt
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam1_results\calib_cam1_objPoints.txt
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam1_results\calib_cam1_imgPoints.txt
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam1_results\calib_cam1_prjPoints.txt
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam1_results\calib_cam1_errPoints.txt
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam1_results\calib_cam1_drawPoints.JPG
+
+
+
+# Calibrate camera 2
+
+calibChess
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam2\*.JPG
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam2_results\calib_cam2_files.txt
+(7, 12)
+(21.31, 21.35)
+# flags
+201
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam2_results\calib_cam2_parameters.txt
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam2_results\calib_cam2_objPoints.txt
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam2_results\calib_cam2_imgPoints.txt
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam2_results\calib_cam2_prjPoints.txt
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam2_results\calib_cam2_errPoints.txt
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam2_results\calib_cam2_drawPoints.JPG
+
+
+
+# pick 5 points for solvepnp (camera 1)
+pps
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\cam1\IMG_4237.JPG
+# Number of points (must be >= 1):
+# For example, 3
+5
+# Enter the file to save the image points (in csv format):
+#   (or enter a single dot (.) to skip saving.)
+# For example, examples/pickPoints/try_pickedPoints.csv
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam1_results\pickedPoints_for_solvePnp.csv
+# Enter the image file to save the markers (in OpenCV supported image format):
+#   (or enter a single dot (.) to skip saving.)
+# For example: examples/pickPoints/try_pickedPoints.JPG
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam1_results\pickedPoints_for_solvePnp.JPG
+#
+#  (manual picking)
+#
+
+# pick 5 points for solvepnp (camera 2)
+pps
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam2_results\IMG_2647.JPG
+# Number of points (must be >= 1):
+# For example, 3
+5
+# Enter the file to save the image points (in csv format):
+#   (or enter a single dot (.) to skip saving.)
+# For example, examples/pickPoints/try_pickedPoints.csv
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam2_results\pickedPoints_for_solvePnp.csv
+# Enter the image file to save the markers (in OpenCV supported image format):
+#   (or enter a single dot (.) to skip saving.)
+# For example: examples/pickPoints/try_pickedPoints.JPG
+D:\yuansen\Lectures\CVIM\2024\tracking_3d_disp_2\calib_cam2_results\pickedPoints_for_solvePnp.JPG
+#
+#  (manual picking)
+#

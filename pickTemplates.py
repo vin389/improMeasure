@@ -91,7 +91,7 @@ def pickTemplates(img=np.zeros((0,0),dtype=np.uint8),
         nPoints = input3("", dtype=int, min=1)
         # initialize imgPoints as a float array filled with nans
         # 6 columns are for xi, yi, x0, y0, width, height
-        imgPoints = np.ones((nPoints,6),dtype=np.float) * np.nan
+        imgPoints = np.ones((nPoints,6),dtype=np.float64) * np.nan
     # ask file to save image points and templates 
     if (savefile == ""):
         print("# Enter the file to save the image points and templates (in csv format):")

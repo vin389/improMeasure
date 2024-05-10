@@ -249,6 +249,7 @@ def tkCalib():
                 edCmatGuess.delete(0., tk.END)
                 edCmatGuess.insert(0., theStr)
         except:
+            tk.messagebox.showerror(title="Error", message="Cannot read the image file.")
             print("Cannot read the image file.")
         strImgSize = edImgSize.get(0., tk.END)
         print('Image size: ', strImgSize)
@@ -260,7 +261,8 @@ def tkCalib():
         strImgSize = edImgSize.get(0., tk.END)
         imgSize = npFromString(strImgSize)
         if type(imgSize) != np.ndarray or imgSize.size != 2:
-            print("# error: Image size is invalid (edit text is %s)" % (strImgSize))
+            errMsg = '# error: Image size is invalid (edit text is %s)' % (strImgSize)
+            tk.messagebox.showerror(title="Error", message="errMsg")
             return None
         return imgSize.astype(int).flatten()
     # set button command function
@@ -325,6 +327,85 @@ def tkCalib():
         return cdvecGuess
     # set button command function 
     btDvecGuess.configure(command=btDvecGuess_clicked)
+
+    # #######################################################
+    # Button of [Find chessboard corners]
+    # #######################################################
+    btFindCbCorners = tk.Button(frame1, text='Find chessboard corners')
+    btFindCbCorners.pack()
+    edCbParams = tk.Text(frame1, width=40, height=1, undo=True, 
+                          autoseparators=True, maxundo=-1)
+    edCbParams.pack()
+    #   set initial text for demonstration
+    try:
+        theMat = np.loadtxt(os.path.join(os.getcwd(), 'tkCalib_init_cboardParams.npy'))
+#        theStr = stringFromNp(theMat, sep='\t')
+        theStr = '%d %d %f %f' % (theMat[0], theMat[1], theMat[2], theMat[3])
+        edCbParams.delete(0., tk.END)
+        edCbParams.insert(0., theStr)
+    except:
+        print("Warning: Cannot load tkCalib_init_cboardParams.npy")
+        edCbParams.delete(0., tk.END)
+        edCbParams.insert(0., '7 7 25.4 25.4 ')
+    # define button command function
+    def btFindCbCorners_clicked():
+        # get chessboard files
+        try:
+            cbFiles = edFile.get(0., tk.END).split()
+            nCbFiles = len(cbFiles)
+        except:
+            tk.messagebox.showerror(title="Error", message="# Error: Cannot get calibration files.")
+            return 
+        # get chessboard parameters (nCornersX, nCornersY, dxCorners, dyCorners)
+        try:
+            strCbParams = edCbParams.get(0., tk.END)
+            npCbParams = npFromString(strCbParams)
+            nCornersX = int(npCbParams[0])
+            nCornersY = int(npCbParams[1])
+            dxCorners = float(npCbParams[2])
+            dyCorners = float(npCbParams[3])
+        except:
+            tk.messagebox.showerror(title="Error", message="# Error: Cannot get chessboard information.")
+            return 
+        # calibration flags
+        try:
+            calibFlags = int(edFlags.get())
+        except:
+            tk.messagebox.showerror(title="Error", message="# Error: Cannot get flags.")
+            return 
+        # allocate arrays
+        nFiles = len(cbFiles)
+        # try to find corners from the images
+        try:
+            imgPointsList = []
+            for icb in range(nFiles):
+                fname = cbFiles[icb]
+                img = cv.imread(fname, cv.IMREAD_GRAYSCALE)
+                flags=cv.CALIB_CB_ADAPTIVE_THRESH + cv.CALIB_CB_NORMALIZE_IMAGE
+                found, ptsThis = cv.findChessboardCorners(img, (nCornersX, nCornersY), flags)
+                if found:
+                    imgPointsList.append(ptsThis)
+                else:
+                    errMsg = '# Failed to find corners in %s' % (fname)
+                    tkCalib_printMessage(errMsg)
+                    tk.messagebox.showerror(title='Warning', message=errMsg)
+        except:
+            errMsg = '# Failed to find corners'
+            tk.messagebox.showerror(title='Error', message=errMsg)
+            return
+        if len(imgPointsList) <= 0:
+            errMsg = '# Failed to find corners for all images.'
+            tk.messagebox.showerror(title='Error', message=errMsg)
+            return
+        # 
+        nFound = len(imgPointsList)
+        imgPoints2f = np.array(imgPointsList).reshape(nFound, -1, 2)
+
+        print(cbFiles, nCbFiles)
+        strCbParams = edCbParams.get(0., tk.END)
+        pass
+    # set button command function 
+    btFindCbCorners.configure(command=btFindCbCorners_clicked)
 
     # #######################################################
     # Frame 2
@@ -781,7 +862,7 @@ def tkCalib():
         fname = edFile.get(0., tk.END)
         # fname could be 1 file or multiple files. we get file [0]
         fname = fname.split()[0]
-        initDir = os.path.split()[0]
+        initDir = os.path.split(fname)[0]
         ufileDirFile = uiputfile("Save undistorted image to file ...", initialDirectory=initDir)
         # if xfile is selected
         if (type(ufileDirFile) == tuple or type(ufileDirFile) == list) and \
@@ -969,6 +1050,14 @@ def tkCalib():
             np.savetxt(os.path.join(os.getcwd(), 'tkCalib_init_dvecGuess.npy'), theMat)
         except:
             tkCalib_printMessage("# Error: Cannot parse distortion vec (guessed).")
+        # save current chessboard parameters
+        try:
+            theStr = edCbParams.get(0., tk.END)
+            theMat = npFromString(theStr).reshape((-1))
+            theMat = theMat.astype(np.float64)
+            np.savetxt(os.path.join(os.getcwd(), 'tkCalib_init_cboardParams.npy'), theMat)
+        except:
+            tkCalib_printMessage("# Error: Cannot parse calibration board parameters (nCornersX nCornersY dxCorners dyCorners.")
         # save current flags
         try:
             theStr = edFlags.get()
@@ -992,7 +1081,7 @@ def tkCalib():
         except:
             tkCalib_printMessage("# Error: Cannot parse grid coordinates (Xs/Ys/Zs).")
                 
-        print("Window Closed. Returning rvec, tvec, cmat, and dvec")
+        print("tkCalib window closed.")
         imgSize = npFromString(edImgSize.get(0., tk.END)).astype(int).flatten()
         try:
             rvec = npFromString(edRvecs.get(0., tk.END)).reshape(3, -1)
@@ -1013,9 +1102,6 @@ def tkCalib():
         win.destroy()
         return     
     
-    
-
-
     win.lift()
     win.attributes("-topmost", True)
     win.after_idle(win.attributes,'-topmost',False)
@@ -1025,4 +1111,5 @@ def tkCalib():
 
 
 if __name__ == "__main__":
-    camParams = tkCalib()
+#    camParams = tkCalib()
+    tkCalib()
