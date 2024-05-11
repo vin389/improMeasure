@@ -422,52 +422,29 @@ for ilag in range(t_lags.size):
         ticMeasures[5] += time.time() - tic    
         # 
         # print info
-        print("# If time lag is %.3fs, average projection error is %.3f" % (t_lag, err) )
+        print("# If time lag is %.3fs, average projection error of POI %d is %.3f" % (t_lag, iPoi+1, err) )
 
-
-    plt.plot(t_lags, prjErr); plt.grid('True')
-    
-    # Triangulation data preparation
-    # Instead of doing triangulation frame by frame (each frame for all points)
-    # we do triangulation point by point (each point for all frames)
-    imgPoints1 = np.zeros((nFrameTriang,2), dtype=np.float64)
-    imgPoints2 = np.zeros((nFrameTriang,2), dtype=np.float64)
-    intpv2xi = scipy.interpolate.interp1d(t_v2, bigTable[0:t_v2.size, iPoi*5+200*icam+1], kind='cubic')
-    intpv2yi = scipy.interpolate.interp1d(t_v2, bigTable[0:t_v2.size, iPoi*5+200*icam+2], kind='cubic')
-    
-    
+t_lag_p = np.zeros(min(nPoints), dtype=float)
 for iPoi in range(min(nPoints)):
-    icam = 0
-    imgPoints1[iPoi, 0] = bigTable[iFrame, iPoi*5+200*icam+1]
-    imgPoints1[iPoi, 1] = bigTable[iFrame, iPoi*5+200*icam+2]
-    # create interp1d object for v2 (icam = 1)
-    icam = 1
-    intpv2xi = scipy.interpolate.interp1d(t_v2, bigTable[0:t_v2.size, iPoi*5+200*icam+1], kind='cubic')
-    intpv2yi = scipy.interpolate.interp1d(t_v2, bigTable[0:t_v2.size, iPoi*5+200*icam+2], kind='cubic')
+    # find the t_lag which results in minimum prjErr[iPoi, :]
+    ilagmin = np.argmin(prjErr[iPoi,:])
+    t2 = t_lags[ilagmin]
+    t1 = t2 - 1
+    t3 = t2 + 1
+    e1 = prjErr[iPoi, ilagmin - 1]
+    e2 = prjErr[iPoi, ilagmin]
+    e3 = prjErr[iPoi, ilagmin + 1]
+    # shift time axis so that t2_ = 0, t2_ = t2 - t2
+    tmat = np.array([1, -1, 1, 0, 0, 1, 1, 1, 1], dtype=float).reshape(3,3)
+    evec = np.array([e1, e2, e3], dtype=float).reshape(3, 1)
+    coef = np.linalg.inv(tmat) @ evec
+    t_lag_p[iPoi] = -.5 * coef[1] / coef[0] + t2
 
-    imgPoints2[iPoi, 0] = bigTable[iFrame, iPoi*5+200*icam+1]
-    imgPoints2[iPoi, 1] = bigTable[iFrame, iPoi*5+200*icam+2]
-cmat1 = cmats[0]; dvec1 = dvecs[0]; rvec1 = rvecs[0]; tvec1 = tvecs[0]
-cmat2 = cmats[1]; dvec2 = dvecs[1]; rvec2 = rvecs[1]; tvec2 = tvecs[1]
-# Triangulation 
-objPoints, objPoints1, objPoints2, \
-    prjPoints1, prjPoints2, prjErrors1, prjErrors2 = \
-    triangulatePoints2(cmat1, dvec1, rvec1, tvec1, 
-                       cmat2, dvec2, rvec2, tvec2, 
-                       imgPoints1, imgPoints2)
-# Triangulation post-processing (writing to bigTable)
-for iPoi in range(min(nPoints)):
-    bigTable[iFrame, 1 + iPoi*7 + 400] = objPoints[iPoi,0]
-    bigTable[iFrame, 1 + iPoi*7 + 401] = objPoints[iPoi,1]
-    bigTable[iFrame, 1 + iPoi*7 + 402] = objPoints[iPoi,2]
-    bigTable[iFrame, 1 + iPoi*7 + 403] = prjErrors1[iPoi,0]
-    bigTable[iFrame, 1 + iPoi*7 + 404] = prjErrors1[iPoi,1]
-    bigTable[iFrame, 1 + iPoi*7 + 405] = prjErrors2[iPoi,0]
-    bigTable[iFrame, 1 + iPoi*7 + 406] = prjErrors2[iPoi,1]        
-
-
-
-
+plt.plot(range(1,21), t_lag_p, '.-')
+plt.title('Best time lags (frame) ')
+plt.xlabel('Point')
+plt.ylabel('Best time lag (frame)')
+plt.grid(True)
 
 
 
