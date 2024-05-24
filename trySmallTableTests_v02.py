@@ -277,17 +277,15 @@ np.savetxt(fBigTable, bigTable, delimiter=",")
 #except:
 #    print("# Failed to save figure to a file.")
 
-# close window and release v1     
-try:
-    cv2.waitKey(0)
-    cv2.destroyWindow("Plot")
-except:
-    pass
-
 for icam in range(2):
     if videos[icam].isOpened():
         videos[icam].release()
-
+    
+#try:
+#    cv2.waitKey(1000) # 
+#    cv2.destroyWindow("Plot")
+#except:
+#    pass
 
 
 # determine the trial t_lag 
@@ -295,7 +293,7 @@ t_interest_range = [6*60, 66*60]  # triangulation time range in video 1 (in unit
 t_lag_bounds = [-8*60, -5*60]  # possible time lag of video 2
 #t_interest_range = [0*60, 66*60]  # triangulation time range in video 1 (in unit of frame, have to be integers)
 #t_lag_bounds = [0,0]  # possible time lag of video 2
-t_lags = np.linspace(min(t_lag_bounds), max(t_lag_bounds), 
+t_lag_trials = np.linspace(min(t_lag_bounds), max(t_lag_bounds), 
                      round(abs(t_lag_bounds[1]-t_lag_bounds[0])+1))
 
 # check 
@@ -322,7 +320,7 @@ if t_interest_range_forcedToChange:
 # t_interests[icam]: time tags of frames of interests 
 #   For example, if you are only interested in the triangulation of 
 #   frames 300 to 3900 in cam 0, t_interest = [300, 301, ..., 3900]
-#   and t_v2_interest = [330, 331, 332., ...] (if t_lags is 30)
+#   and t_v2_interest = [330, 331, 332., ...] (if t_lag_trial is 30)
 nFrameInterest = round(t_interest_range[1] - 
                        t_interest_range[0])
 t_interest = np.linspace(t_interest_range[0], 
@@ -332,12 +330,12 @@ t_interest = np.linspace(t_interest_range[0],
 imgPoints1_xyi_thisPoi_interest = np.zeros((t_interest.size, 2), dtype=np.float64)
 imgPoints2_xyi_thisPoi_interest = np.zeros((t_interest.size, 2), dtype=np.float64)
 
-prjErr = np.zeros((min(nPoints), t_lags.size), dtype=float)
+prjErr = np.zeros((min(nPoints), t_lag_trials.size), dtype=float)
 
 ticMeasures = np.zeros(100)
-for ilag in range(t_lags.size):
+for ilag in range(t_lag_trials.size):
     tic = time.time()
-    t_lag = t_lags[ilag]
+    t_lag = t_lag_trials[ilag]
     # t_v1 and t_v2: based on the t_tag, set time tags of every frame   
     # t_v1[] would be [0., 1., 2., ...]
     # t_v2[] would be [30., 31., 32., ...] if video 2 lags 30 seconds (turned on 30s later)    
@@ -424,11 +422,11 @@ for ilag in range(t_lags.size):
         # print info
         print("# If time lag is %.3fs, average projection error of POI %d is %.3f" % (t_lag, iPoi+1, err) )
 
-t_lag_p = np.zeros(min(nPoints), dtype=float)
+t_lags = np.zeros(min(nPoints), dtype=float)
 for iPoi in range(min(nPoints)):
     # find the t_lag which results in minimum prjErr[iPoi, :]
     ilagmin = np.argmin(prjErr[iPoi,:])
-    t2 = t_lags[ilagmin]
+    t2 = t_lag_trials[ilagmin]
     t1 = t2 - 1
     t3 = t2 + 1
     e1 = prjErr[iPoi, ilagmin - 1]
@@ -437,20 +435,72 @@ for iPoi in range(min(nPoints)):
     # shift time axis so that t2_ = 0, t2_ = t2 - t2
     tmat = np.array([1, -1, 1, 0, 0, 1, 1, 1, 1], dtype=float).reshape(3,3)
     evec = np.array([e1, e2, e3], dtype=float).reshape(3, 1)
-    coef = np.linalg.inv(tmat) @ evec
-    t_lag_p[iPoi] = -.5 * coef[1] / coef[0] + t2
-
-plt.plot(range(1,21), t_lag_p, '.-')
+    coef = (np.linalg.inv(tmat) @ evec).flatten()
+    t_lags[iPoi] = -.5 * coef[1] / coef[0] + t2
+    
+plt.plot(range(1,21), t_lags, '.-')
 plt.title('Best time lags (frame) ')
 plt.xlabel('Point')
 plt.ylabel('Best time lag (frame)')
 plt.grid(True)
+    
+# based on best time lags, do triangulation
+for iPoi in range(min(nPoints)):
+    # print info
+    # image points of this point in cam 0
+    icam = 0
+    xi = bigTable[0:t_v1.size, iPoi*5+200*icam+1]
+    yi = bigTable[0:t_v1.size, iPoi*5+200*icam+2]
+    imgPoints1_xyi_thisPoi_interest[:,0] = xi[
+        round(t_interest[0]):round(t_interest[-1])].copy()
+    imgPoints1_xyi_thisPoi_interest[:,1] = yi[
+        round(t_interest[0]):round(t_interest[-1])].copy()
+    ticMeasures[1] += time.time() - tic    
 
+    # image points of this point in cam 1
+    # create interpolation objects for cam 2 (v2)
+    tic = time.time()
+        
+    icam = 1
+    xi = bigTable[0:t_v2.size, iPoi*5+200*icam+1]
+    yi = bigTable[0:t_v2.size, iPoi*5+200*icam+2]
+    # in case xi has nan, fill all nan in xi with its previous value
+    if np.isnan(xi[0]):
+        xi[0] = 0.0
+        print("# Warning: Cam 2 Point %d starts from nan. " % (iPoi))
+    for iiFrame in range(xi.size):
+        if np.isnan(xi[iiFrame]):
+            xi[iiFrame] = xi[iiFrame - 1]
+    if np.isnan(yi[0]):
+        yi[0] = 0.0
+        print("# Warning: Cam 2 Point %d starts from nan. " % (iPoi))
+    for iiFrame in range(yi.size):
+        if np.isnan(yi[iiFrame]):
+            yi[iiFrame] = yi[iiFrame - 1]
 
+    intpv2xi = scipy.interpolate.interp1d(t_v2, xi, kind='cubic')
+    intpv2yi = scipy.interpolate.interp1d(t_v2, yi, kind='cubic')
+    imgPoints2_xyi_thisPoi_interest[:,0] = intpv2xi(t_interest)
+    imgPoints2_xyi_thisPoi_interest[:,1] = intpv2yi(t_interest)
+    ticMeasures[3] += time.time() - tic    
 
+    # plot for debug
+    debugPlotSync = False
+    if debugPlotSync and ilag == 0 and iPoi == 0:
+        plt.plot(t_interest, imgPoints1_xyi_thisPoi_interest[:,0] - imgPoints1_xyi_thisPoi_interest[:,0][0], '.-', markersize=3, label='Cam 1')
+        plt.plot(t_interest, imgPoints2_xyi_thisPoi_interest[:,0] - imgPoints2_xyi_thisPoi_interest[:,0][0], '.-', markersize=3, label='Cam 2')
+        plt.legend()
+        plt.show()
+    # Triangulation
+    objPoints, objPoints1, objPoints2, \
+        prjPoints1, prjPoints2, prjErrors1, prjErrors2 = \
+        triangulatePoints2(cmats[0], dvecs[0], rvecs[0], tvecs[0], 
+                           cmats[1], dvecs[1], rvecs[1], tvecs[1], 
+                           imgPoints1_xyi_thisPoi_interest, 
+                           imgPoints2_xyi_thisPoi_interest)
 
-
-
-
+    prjErr[iPoi, ilag] = err
+    
+    
 
 
