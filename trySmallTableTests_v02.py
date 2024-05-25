@@ -317,7 +317,7 @@ if t_interest_range_forcedToChange:
     print("# Warning: t_lag_bounds is changed from (%d,%d) to (%d,%d)" %
           (t_interest_range_original[0], t_interest_range_original[1], 
            t_interest_range[0],          t_interest_range[1]))
-# t_interests[icam]: time tags of frames of interests 
+# t_interest[icam]: time tags of frames of interests 
 #   For example, if you are only interested in the triangulation of 
 #   frames 300 to 3900 in cam 0, t_interest = [300, 301, ..., 3900]
 #   and t_v2_interest = [330, 331, 332., ...] (if t_lag_trial is 30)

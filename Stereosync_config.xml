@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<working_directory>""</working_directory>
+<video_file_1>""</video_file_1>
+<video_file_2>""</video_file_2>
+<calibration_file_1>""</calibration_file_1>
+<calibration_file_2>""</calibration_file_2>
+<templates_file_1>""</templates_file_1>
+<templates_file_2>""</templates_file_2>
+<range_of_tracking_cameras>""</range_of_tracking_cameras>
+<range_of_tracking_points>""</range_of_tracking_points>
+<range_of_tracking_frames>""</range_of_tracking_frames>
+<range_of_possible_lags>""</range_of_possible_lags>
+<range_of_points_for_sync_analysis>""</range_of_points_for_sync_analysis>
+<range_of_frames_for_sync_analysis>""</range_of_frames_for_sync_analysis>
+<range_of_points_for_triangulation>""</range_of_points_for_triangulation>
+<range_of_frames_for_triangulation>""</range_of_frames_for_triangulation>
+</opencv_storage>
