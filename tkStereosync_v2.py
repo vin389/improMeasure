@@ -13,6 +13,7 @@ from eccTrackVideo import eccTrackVideo
 
 global win, bigTable, fVideos, fTmplts, fCalibs, videos, nFrames, nPoints, imgInits, tmplts, cmats, dvecs, rvecs, tvecs
 global prjErr
+bigTable = np.array([], dtype=np.float64)
 fVideos = [None, None] 
 fTmplts = [None, None]
 fCalibs = [None, None]
@@ -29,7 +30,7 @@ tvecs = [None, None]
 def tkStereosync():
     global win
     win = tk.Tk()
-    win.title("Stereo synchronization (v.2.20240525)")
+    win.title("Stereo synchronization (v.2.2024602)")
     win.geometry("1400x700")
     
     # Frame 1 about working directory
@@ -383,6 +384,7 @@ def tkStereosync():
         print("# Completed defining templates for camera %d." % (icam+1))
     # end of def event_btNewTFx():
     btNewTF1.bind("<ButtonRelease-1>", event_btNewTFx)
+    btNewTF2.bind("<ButtonRelease-1>", event_btNewTFx)
     
     # From colon-separate integer range to list of integer 
     # Range is in Matlab style, not Python style.
@@ -439,6 +441,11 @@ def tkStereosync():
         fVideos[1] = os.path.join(workDir, txVidFile2.get('0.0', 'end').strip())
         fTmplts[0] = os.path.join(workDir, txTmpltFile1.get('0.0', 'end').strip())
         fTmplts[1] = os.path.join(workDir, txTmpltFile2.get('0.0', 'end').strip())
+        # get nPoints
+        tmplts[0] = np.loadtxt(fTmplts[0], delimiter=',')
+        tmplts[1] = np.loadtxt(fTmplts[0], delimiter=',')
+        nPoints[0] = tmplts[0].shape[0]
+        nPoints[1] = tmplts[1].shape[0]
         # create video objects
         for icam in range(2):
             videos[icam] = cv2.VideoCapture(fVideos[icam])
@@ -447,7 +454,9 @@ def tkStereosync():
             nFrames[icam] = round(videos[icam].get(cv2.CAP_PROP_FRAME_COUNT))
         nFrameMax = np.max(nFrames)
         # Allocate memory for bigTable 
-        bigTable = np.ones((nFrameMax, 600), dtype=np.float32) * np.nan
+        if bigTable.shape[0] != nFrameMax or bigTable.shape[1] != 600:
+            bigTable = np.ones((nFrameMax, 600), dtype=np.float64) * np.nan
+            bigTable[:,0] = np.linspace(1, nFrameMax, nFrameMax)
         # call eccTrackVideo()
         for icam in camsList:
             videoFilepath=fVideos[icam]
@@ -482,6 +491,11 @@ def tkStereosync():
         global bigTable, nFrames, cmats, dvecs, rvecs, tvecs
         global prjErr
         print("# event_btFindTimeLags().")
+        # get nPoints
+        tmplts[0] = np.loadtxt(fTmplts[0], delimiter=',')
+        tmplts[1] = np.loadtxt(fTmplts[0], delimiter=',')
+        nPoints[0] = tmplts[0].shape[0]
+        nPoints[1] = tmplts[1].shape[0]
         # Range of possible lags. t_lag_trials needs to be continuous integer list.
         tLagTrialsText = txPossibleLag.get('0.0', 'end').strip()
         t_lag_trials = np.array(colonRangeToIntList(tLagTrialsText), dtype=int)
@@ -736,7 +750,7 @@ def tkStereosync():
         calibFile1 = txCalibFile1.get('1.0', 'end').strip()
         fs.write('calibration_file_1', calibFile1)
         #   calibration file 2
-        calibFile2 = txCalibFile1.get('1.0', 'end').strip()
+        calibFile2 = txCalibFile2.get('1.0', 'end').strip()
         fs.write('calibration_file_2', calibFile2)
         #   template frame ID 1
         tmpltFrameId1 = txTmpltFrameId1.get('0.0', 'end').strip()

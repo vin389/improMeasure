@@ -184,23 +184,26 @@ def eccTrackVideo(
 # end of def eccTrackVideo
 
 if __name__ == '__main__':
-    videoFilepath = 'D:/ExpDataSamples/20240600-CarletonShakeTableCeilingSystem/preparation_demo10/Cam 2.MP4'
-    tmpltFilepath = 'D:/ExpDataSamples/20240600-CarletonShakeTableCeilingSystem/preparation_demo10/templates2.csv'
-    tmpltFrameId = 40 # initial frame id
-    frameRange = [40, 80]
-    tmpltRange = np.arange(0, 20)
-    bigTable = np.ones((5000, 600), dtype=np.float32) * np.nan
-    mTable = bigTable[:, 1:1+5*20]
-    saveFilepath= 'D:/ExpDataSamples/20240600-CarletonShakeTableCeilingSystem/preparation_demo10/test_mTable_v2.csv'
-    eccTrackVideo(
-        videoFilepath=videoFilepath,
-        tmpltFilepath=tmpltFilepath,
-        tmpltFrameId=tmpltFrameId,
-        frameRange=frameRange,
-        tmpltRange=tmpltRange,
-        saveFilepath=saveFilepath
-    )
-
+    print('# Do you want to run eccTrackVideo demo? (1 to run)')
+    toRun = input().strip()
+    if toRun == '1':
+        videoFilepath = 'D:/ExpDataSamples/20240600-CarletonShakeTableCeilingSystem/preparation_demo10/Cam 2.MP4'
+        tmpltFilepath = 'D:/ExpDataSamples/20240600-CarletonShakeTableCeilingSystem/preparation_demo10/templates2.csv'
+        tmpltFrameId = 40 # initial frame id
+        frameRange = [40, 80]
+        tmpltRange = np.arange(0, 20)
+        bigTable = np.ones((5000, 600), dtype=np.float32) * np.nan
+        mTable = bigTable[:, 1:1+5*20]
+        saveFilepath= 'D:/ExpDataSamples/20240600-CarletonShakeTableCeilingSystem/preparation_demo10/test_mTable_v2.csv'
+        eccTrackVideo(
+            videoFilepath=videoFilepath,
+            tmpltFilepath=tmpltFilepath,
+            tmpltFrameId=tmpltFrameId,
+            frameRange=frameRange,
+            tmpltRange=tmpltRange,
+            saveFilepath=saveFilepath
+        )
+    # end of if toRun == '1':
 
 
 #     global nPoints, prjErr, t_lags
