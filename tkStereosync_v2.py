@@ -257,6 +257,22 @@ def tkStereosync():
     txSaveData.delete('0.0', 'end')
     txSaveData.insert('0.0', 'Stereosync_data.csv')
 
+    # Frame 9 about visualization
+    frame9 = tk.Frame(win, highlightbackground="gray", highlightthickness=1)
+    frame9.pack(fill=tk.X, pady=2)
+    lbAboutPlot = tk.Label(frame9, text="About plotting", fg='gray')
+    lbAboutPlot.grid(row=0, column=0, sticky="W")
+    # Button btPlot
+    btPlot = tk.Button(frame9, width=30, text="Plot")
+    btPlot.grid(row=1, column=0, padx=5, pady=2)
+    # Text txPlot
+    txPlot = tk.Text(frame9, width=50, height=1, undo=True, 
+                        autoseparators=True, maxundo=-1)
+    txPlot.grid(row=1, column=1, padx=5, pady=2)
+    txPlot.delete('0.0', 'end')
+    txPlot.insert('0.0', '1 402   1 409')
+     
+
     # bind event of btWorkDir
     def event_btWorkDir(event):
         tmpwin = tk.Tk()
@@ -950,11 +966,40 @@ def tkStereosync():
         print("# Loaded data size: (%d, %d)" % (bigTable.shape[0], bigTable.shape[1]))
     # end of def loadData(event=None)
 
-    # bind event of btLoadData
+    # bind event of btLoadData and SaveConfig
     btLoadData.bind('<ButtonRelease-1>', loadData)
-
     btSaveConfig.bind("<ButtonRelease-1>", event_btSaveConfig)
     
+    # bind event of Plot
+    def plotData(event=None):
+        # get column indices of x (xcol) and y (ycol)
+        try:
+            import matplotlib.pyplot as plt
+            global bigTable
+            theStr = txPlot.get('0.0', 'end').strip()
+            pindex = np.fromstring(theStr, sep=' ', dtype=np.int32).flatten()
+            nLine = pindex.size // 2
+            fig, ax = plt.subplots()
+            lines = []
+            for iline in range(nLine):
+                xdata = bigTable[:,pindex[iline*2]-1]
+                ydata = bigTable[:,pindex[iline*2+1]-1]
+                valid_indices = np.where(~np.isnan(xdata) & ~np.isnan(ydata))[0]
+                xdatp = xdata[valid_indices]
+                ydatp = ydata[valid_indices]
+                ydatp = ydata[valid_indices] - ydatp[0]
+                theLine, = ax.plot(xdatp, ydatp,
+                           label="Line %d" % (iline+1), linewidth=1, 
+                           marker='o', markersize=2)
+            ax.set(xlabel="X-axis", ylabel="Y-axis", title="Data plot")
+            ax.legend()
+            ax.grid(True)
+            plt.show()
+        except:
+            print("# Error. Cannot parse plot argument %s" % theStr)
+    btPlot.bind("<ButtonRelease-1>", plotData)
+
+
     win.mainloop()
 
 
