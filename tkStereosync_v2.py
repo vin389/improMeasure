@@ -288,6 +288,8 @@ def tkStereosync():
         txWorkDir.insert("1.0", workDir)
         # load config
         loadConfig()
+        # load data 
+        loadData()
     btWorkDir.bind("<ButtonRelease-1>", event_btWorkDir)
 
     ####################################
@@ -522,6 +524,7 @@ def tkStereosync():
         # Range of sync analysis frames. t_interest_range needs to be continuous integer list.
         t_interest_text = txSyncFrameRange.get('0.0', 'end').strip()
         t_interest = np.array(colonRangeToIntList(t_interest_text), dtype=int)
+        t_interest -= 1 # convert from 1-based index to 0-based index. Frame 1 for user is frame 0 for numpy.
         t_interest_range = [np.min(t_interest), np.max(t_interest)]
         # Clear Time lags (each point)
         txLags.delete('0.0', 'end')
@@ -554,7 +557,7 @@ def tkStereosync():
                             t_interest_range[0])
         t_interest = np.linspace(t_interest_range[0], 
                                 t_interest_range[1],
-                                nFrameInterest)
+                                nFrameInterest+1)
         #
         imgPoints1_xyi_thisPoi_interest = np.zeros((t_interest.size, 2), dtype=np.float64)
         imgPoints2_xyi_thisPoi_interest = np.zeros((t_interest.size, 2), dtype=np.float64)
@@ -577,9 +580,9 @@ def tkStereosync():
                 xi = bigTable[0:t_v1.size, iPoi*5+200*icam+1]
                 yi = bigTable[0:t_v1.size, iPoi*5+200*icam+2]
                 imgPoints1_xyi_thisPoi_interest[:,0] = xi[
-                    round(t_interest[0]):round(t_interest[-1])].copy()
+                    round(t_interest[0]):round(t_interest[-1])+1].copy()
                 imgPoints1_xyi_thisPoi_interest[:,1] = yi[
-                    round(t_interest[0]):round(t_interest[-1])].copy()
+                    round(t_interest[0]):round(t_interest[-1])+1].copy()
                 ticMeasures[1] += time.time() - tic    
                 # image points of this point in cam 1
                 # create interpolation objects for cam 2 (v2)
@@ -611,6 +614,7 @@ def tkStereosync():
                 # plot for debug
                 debugPlotSync = False
                 if debugPlotSync and ilag == 0 and iPoi == 0:
+                    import matplotlib.pyplot as plt
                     plt.plot(t_interest, imgPoints1_xyi_thisPoi_interest[:,0] - imgPoints1_xyi_thisPoi_interest[:,0][0], '.-', markersize=3, label='Cam 1')
                     plt.plot(t_interest, imgPoints2_xyi_thisPoi_interest[:,0] - imgPoints2_xyi_thisPoi_interest[:,0][0], '.-', markersize=3, label='Cam 2')
                     plt.legend()
@@ -635,15 +639,18 @@ def tkStereosync():
                     axes[3].plot(t_interest, prjErrors2[:,1], '.-', markersize=3, label='c2y'); axes[3].grid('True')
                 # norm of error
                 tic = time.time()
-                err = (np.linalg.norm(prjErrors1.flatten()) + np.linalg.norm(prjErrors2.flatten())) / np.sqrt(2*prjErrors1.shape[0])
-                prjErr[iPoi, ilag] = err
+#                err = (np.linalg.norm(prjErrors1, axis=1).mean()+np.linalg.norm(prjErrors2, axis=1).mean()) * .5
+#                err = np.linalg.norm(np.concatenate((prjErrors1.flatten(),prjErrors2.flatten()))) / (prjErrors1.size + prjErrors2.size)**.5
+                errvec = np.concatenate((prjErrors1.flatten(),prjErrors2.flatten()))
+                mse = np.mean(np.square(errvec))
+                prjErr[iPoi, ilag] = mse
                 ticMeasures[5] += time.time() - tic    
                 # 
                 # print info
 #                print("# If time lag is %.1f frames, average projection error of point %d is %.3f" % (t_lag, iPoi+1, err) )
             # end of for iPoi in range(min(nPoints))
             avgErr = np.sum(prjErr[:,ilag]) / prjErr.shape[0]
-            print("# If time lag is %.1f frames, average projection error of all points is %.3f" % (t_lag, avgErr) )
+            print("# If time lag is %.1f frames, the mean-square-error (MSE) of projection error of all points is %.3f" % (t_lag, avgErr) )
         # end of for ilag in range(t_lag_trials.size)
         #
         t_lags = np.zeros(min(nPoints), dtype=float)

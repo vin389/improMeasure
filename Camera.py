@@ -701,7 +701,9 @@ class Camera:
         fx(), fy(), cx(), cy(), k1(), k2(), p1(), p2(), k3(), k4(),
         k5(), k6(), 
         rmat(), rmat44(), campos(), 
-        setRvecTvecByPosAim(pos, aim), 
+        setRvecTvecByPosAim(pos, aim),
+        setRvecTvecByPosYawPitch(self, pos, yaw, pitch),
+        setCmatByImgsizeFovs(imgSize, fovs),
         rotateCamera(rotAxis, coordSys, rotAngleInDeg),
         saveToFile(file), 
         loadFromFile(file),
@@ -881,6 +883,21 @@ class Camera:
         self.rvec = rvec
         self.tvec = tvec
         return
+    
+    def setCmatByImgsizeFovs(self, imgSize, fovs, pp=None):
+        # imgSize: [width, height]
+        # fovs: [fov of x, fov of y] in degree 
+        # pp: the principal point [cx, cy] in pixel, 
+        #     default (None) is at center.
+        if np.array(fovs).size == 1:
+            fovs = np.array([fovs, fovs],dtype=float)
+        w = imgSize[0]; h = imgSize[1];
+        fx = .5*w / np.tan(.5*fovs[0]*np.pi/180.)
+        fy = .5*h / np.tan(.5*fovs[1]*np.pi/180.)
+        if type(pp) == type(None):
+            pp = (np.array(imgSize)-1.) / 2.
+        cx = pp[0]; cy = pp[1]; 
+        self.cmat = np.array([fx,0,cx,0,fy,cy,0,0,1.]).reshape(3,3)
     
     def rotateCamera(self, rotAxis, coordSys, rotAngleInDeg):
         """
