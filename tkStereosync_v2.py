@@ -510,6 +510,9 @@ def tkStereosync():
         global prjErr
         print("# event_btFindTimeLags().")
         # get nPoints
+        workDir = txWorkDir.get('0.0', 'end').strip()
+        fTmplts[0] = os.path.join(workDir, txTmpltFile1.get('0.0', 'end').strip())
+        fTmplts[1] = os.path.join(workDir, txTmpltFile2.get('0.0', 'end').strip())
         tmplts[0] = np.loadtxt(fTmplts[0], delimiter=',')
         tmplts[1] = np.loadtxt(fTmplts[0], delimiter=',')
         nPoints[0] = tmplts[0].shape[0]
