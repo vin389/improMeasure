@@ -814,6 +814,9 @@ def tkStereosync():
         #   range of frames for triangulation
         triangFrames = txTriangFrameRange.get('1.0', 'end').strip()
         fs.write('range_of_frames_for_triangulation', triangFrames)
+        #   time lags
+        timeLags = txLags.get('1.0', 'end').strip()
+        fs.write('time_lags_each_point', timeLags)
         # release
         fs.release()
         print("# Config file saved.")
@@ -889,7 +892,6 @@ def tkStereosync():
         tmpltFile2 = fs.getNode('templates_file_2').string()
         txTmpltFile2.delete('1.0', 'end')
         txTmpltFile2.insert('1.0', tmpltFile2)
-
         #   range of tracking cameras
         trackCams = fs.getNode('range_of_tracking_cameras').string()
         txTrackCamRange.delete('1.0', 'end')
@@ -922,6 +924,10 @@ def tkStereosync():
         triangFrames = fs.getNode('range_of_frames_for_triangulation').string()
         txTriangFrameRange.delete('1.0', 'end')
         txTriangFrameRange.insert('1.0', triangFrames)
+        #   time lags
+        timeLags = fs.getNode('time_lags_each_point').string()
+        txLags.delete('1.0', 'end')
+        txLags.insert('1.0', timeLags)
         # release
         fs.release()
         # set nFrames
