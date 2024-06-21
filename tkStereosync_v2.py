@@ -716,8 +716,10 @@ def tkStereosync():
             # image points of this point in cam 1
             # create interpolation objects for cam 2 (v2)
             icam = 1
-            xi = bigTable[:, iPoi*5+200*icam+1]
-            yi = bigTable[:, iPoi*5+200*icam+2]
+#            xi = bigTable[:, iPoi*5+200*icam+1]
+#            yi = bigTable[:, iPoi*5+200*icam+2]
+            xi = bigTable[:t_v2.shape[0], iPoi*5+200*icam+1]
+            yi = bigTable[:t_v2.shape[0], iPoi*5+200*icam+2]
             # in case xi has nan, fill all nan in xi with its previous value
             if np.isnan(xi[0]):
                 xi[0] = 0.0
