@@ -7,6 +7,7 @@ import cv2
 from triangulatePoints2 import triangulatePoints2
 
 def syncByTriangulation(xi1, xi2, 
+                        syncFrameRange,
                         lagTrials,
                         cmat1, dvec1, rvec1, tvec1, 
                         cmat2, dvec2, rvec2, tvec2,
@@ -25,6 +26,8 @@ def syncByTriangulation(xi1, xi2,
         image coordinates of a point in camera 1
     xi2 : numpy array, (nTimeSteps2, 2), np.float64
         image coordinates of a point in camera 2
+    syncFrameRange : start and end (end is not included, python style) of 
+                     camera 1 frames that user wants to do triangulation. 
     lagTrials : numpy array, (nTrials, ), np.int32
         trials of time lags, e.g., [-10,-8,-6,-4,-2,0,2,4] or
                         np.arange(-10,-5,2)
@@ -72,7 +75,8 @@ def syncByTriangulation(xi1, xi2,
     # reshape and type convertion
     xi1 = xi1.reshape((-1, 2)).astype(np.float64)
     xi2 = xi2.reshape((-1, 2)).astype(np.float64)
-    lagTrials = lagTrials.astype(np.int32).flatten()
+    syncFrameRange = np.array(syncFrameRange,dtype=int).flatten()
+    lagTrials = np.array(lagTrials,dtype=int).flatten()
     cmat1 = cmat1.reshape(3,3).astype(np.float64)
     dvec1 = dvec1.flatten().astype(np.float64)
     if rvec1.size == 9:
@@ -86,10 +90,10 @@ def syncByTriangulation(xi1, xi2,
     rvec2 = rvec2.reshape(3,1).astype(np.float64)
     tvec2 = tvec2.reshape(3,1).astype(np.float64)
     # plot inputs
-    toPlotXi = True
     if toPlotXi:
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
+        fig.suptitle("Image coordinates")
         ax.plot(range(xi1.shape[0]), xi1[:,0]-xi1[0,0], label='xi1_ux')
         ax.plot(range(xi1.shape[0]), xi1[:,1]-xi1[0,1], label='xi1_uy')
         ax.plot(range(xi2.shape[0]), xi2[:,0]-xi2[0,0], label='xi2_ux')
@@ -98,7 +102,25 @@ def syncByTriangulation(xi1, xi2,
     # allocate memory
     msePrjErr = np.ones(lagTrials.size, dtype=np.float64) * np.nan
     if toPlotAllPrjErrs:
+        import matplotlib.pyplot as plt
         allPrjErrs = np.zeros((4*lagTrials.size, xi1.shape[0]), dtype=np.float32)
+    # Check if syncFrameRange is ok. If not okay, adjust syncFrameRange
+    if syncFrameRange[0] < 0:
+        print("# Warning: syncByTriangulation(): syncFrameRange[0] should be >= 0 but is %d." % syncFrameRange[0])
+        syncFrameRange[0] = 0
+    if syncFrameRange[1] > xi1.shape[0]:
+        print("# Warning: syncByTriangulation(): syncFrameRange[1] should be <= %d but is %d." % (xi1.shape[0], syncFrameRange[1]))
+        syncFrameRange[1] = xi1.shape[0]
+    if syncFrameRange[0] < max(lagTrials):
+        print("# Warning: syncByTriangulation(): syncFrameRange[0] should be >= %d but is %d." % (max(lagTrials), syncFrameRange[0]))
+        syncFrameRange[0] = max(lagTrials)
+    if syncFrameRange[1] > xi2.shape[0]+min(lagTrials):
+        print("# Warning: syncByTriangulation(): syncFrameRange[1] should be <= %d but is %d." % (xi2.shape[0]+min(lagTrials), syncFrameRange[1]))
+        syncFrameRange[1] = xi2.shape[0]+min(lagTrials)
+    if syncFrameRange[1] <= syncFrameRange[0]:
+        print("# Error: syncByTriangulation(): syncFrameRange is too narrow, or lagTrials is too wide.")
+        return 
+
     # run the loop over lagRange
     #   (lagRange could be something like [-120, -118, ..., 118, 120])
     tic_lastPrint = time.time()
@@ -108,10 +130,10 @@ def syncByTriangulation(xi1, xi2,
         # Triangulation is on xi1[i] and xi2[i - tLag]
         tLag = lagTrials[ilag]
         # the time range for triangulation
-        t1_start = max(tLag, 0)
-        t1_end = min(xi1.shape[0], xi2.shape[0] + tLag)
-        t2_start = max(-tLag, 0)
-        t2_end = min(xi2.shape[0], xi1.shape[0] - tLag)
+        t1_start = syncFrameRange[0]
+        t1_end = syncFrameRange[1]
+        t2_start = t1_start - tLag
+        t2_end = t1_end - tLag
         # do triangulation
         objPoints, objPoints1, objPoints2,\
             prjPoints1, prjPoints2, prjErrors1, prjErrors2 = \
@@ -139,14 +161,15 @@ def syncByTriangulation(xi1, xi2,
     # end of for ilag in lagRange
     # plot all projection errors
     if toPlotAllPrjErrs:
+        import matplotlib.pyplot as plt
         fig, ax = plt.subplots(); 
+        fig.suptitle("All Project Errors (unit: pixel)")
         im=ax.imshow(allPrjErrs, cmap='jet'); 
         theColorbar = fig.colorbar(im)
         xlabel = ax.set_xlabel('Frame (of camera 1)')
         ylabel = ax.set_ylabel('Lag trials')
     # plot the synchronization trials
-    toPlotTrials = True
-    if toPlotTrials:
+    if toPlotAllMse:
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots()
         ax.plot(lagTrials, msePrjErr)
@@ -154,14 +177,14 @@ def syncByTriangulation(xi1, xi2,
     # get higher precision of best frame by parabola 
     ilagmin = np.argmin(msePrjErr)
     if ilagmin == 0 or ilagmin == msePrjErr.size-1:
-        tlagsBest = lagTrials[ilagmin]
+        tlagBest = lagTrials[ilagmin]
     else:
         x0 = lagTrials[ilagmin-1] - lagTrials[ilagmin]
         x1 = 0
         x2 = lagTrials[ilagmin+1] - lagTrials[ilagmin]
-        y0 = msePrjErr[x0]
-        y1 = msePrjErr[x1]
-        y2 = msePrjErr[x2]
+        y0 = msePrjErr[ilagmin-1]
+        y1 = msePrjErr[ilagmin]
+        y2 = msePrjErr[ilagmin+1]
         pmat = np.array([x0**2,x0,1.,x1**2,x1,1.,x2**2,x2,1.]).reshape(3,3)
         pinv = np.linalg.inv(pmat)
         pabc = pinv@(np.array([y0,y1,y2],dtype=np.float64).reshape(3,1))
@@ -171,15 +194,17 @@ def syncByTriangulation(xi1, xi2,
     #
     return tlagBest, msePrjErr
     
-    
 
-
-# test by synthetic data    
 if __name__ == '__main__':
     from Camera import Camera
     # synthetic cameras
+    #    resolution: 1920 x 1080
+    #    fov (x): 120 degrees. (fov y is not set and the aspect ratio is 1)
+    #    k1: given. Other coefficients are zeros.
+    #    fps: 59.94 fps 
+    #    locations: (-5,0,0) and (5,0,0) aiming (0,10,0)
     imgSize = [1920, 1080]
-    fovs = [120, 120]
+    fovs = 120
     fps = 59.94
     c1 = Camera()
     c1.setCmatByImgsizeFovs(imgSize, fovs);
@@ -189,6 +214,8 @@ if __name__ == '__main__':
     c2.setCmatByImgsizeFovs(imgSize, fovs);
     c2.dvec[0] = -0.1;
     c2.setRvecTvecByPosAim([5,0,0], [0,10,0])
+    
+    # synthetic motion
     # motion (coordinates) of target
     nt = 1000
     objPoints = np.zeros((nt, 3), dtype=np.float64)
@@ -200,7 +227,8 @@ if __name__ == '__main__':
     objPoints[:,0] = radiusX * np.cos(omega * tt) * np.exp(-omega*dmp*tt)
     objPoints[:,1] = 10.
     objPoints[:,2] = radiusY * np.sin(omega * tt) * np.exp(-omega*dmp*tt)
-    # image coordinates
+    
+    # image coordinates of cameras 
     xi1_real, jac = cv2.projectPoints(objPoints, c1.rvec, c1.tvec, c1.cmat, c1.dvec)
     xi1_real = xi1_real.reshape((-1,2))
     xi2_real, jac = cv2.projectPoints(objPoints, c2.rvec, c2.tvec, c2.cmat, c2.dvec)
@@ -230,9 +258,11 @@ if __name__ == '__main__':
     xi2_measure[:,0] = xi2_real_f_x(t2)    
     xi2_measure[:,1] = xi2_real_f_y(t2)
     # syncByTriangulation
+    syncFrameRange = (100, 700)
     lagTrials = np.linspace(-100., 100, 101)
     tlagsBest, msePrjErr = \
         syncByTriangulation(xi1_measure, xi2_measure,
+            syncFrameRange, 
             lagTrials, 
             c1.cmat, c1.dvec, c1.rvec, c1.tvec, 
             c2.cmat, c2.dvec, c2.rvec, c2.tvec,
@@ -241,104 +271,9 @@ if __name__ == '__main__':
             toPlotAllPrjErrs=True
             ) 
     #     
-    print(tlagsBest)
+    print("Best lag is %f frames, which is %f sec." % (tlagsBest, tlagsBest / fps))
+    idealTlag = (tlag2-tlag1) * fps
+    print("The ideal answer is %f frames. syncByTriangulation error is %f frames." % (idealTlag, tlagsBest-idealTlag))
     
     
-    pass    
-# end of if __name__ == '__main__':
-
-    
-def tmpbigtable():
-    global bigTable, cmats, dvecs, rvecs, tvecs, t_lag_trials
-#    xi1 = bigTable[:,1:3]; 
-#    xi2 = bigTable[:,201:203]; 
-    xi1 = bigTable[359:3960,1:3]; 
-    xi2 = bigTable[359:3960,201:203]; 
-    cmat1=cmats[0];dvec1=dvecs[0];rvec1=rvecs[0];tvec1=tvecs[0];
-    cmat2=cmats[1];dvec2=dvecs[1];rvec2=rvecs[1];tvec2=tvecs[1];
-    lagTrials = t_lag_trials;
-
-
-
-
-def savePhotoTimeTable(imgFiles, csvFile: str, ):
-    import PIL
-    from PIL import Image
-    from PIL.ExifTags import TAGS
-    import glob
-    # converts to list of strings (imgFiles can have wildcard such as * or ? )
-    if type(imgFiles) == str:
-        fileList = glob.glob(imgFiles)
-    if type(imgFiles) == list:
-        fileList = imgFiles
-    if type(fileList) != list: 
-        return -1 # returns error
-    nFiles = len(fileList)
-    # create list of image exif DateTime
-    dtimeList = []
-    for i in range(nFiles):
-        img = Image.open(fileList[i])
-        exif = img.getexif()
-        exifDateTime = exif.get(306)  # tag id 306 is DateTime
-        if type(exifDateTime) == str:
-            dtimeList.append(exifDateTime)
-        else:
-            dtimeList.append('')
-    # Save data frame to csv file 
-    try:
-        file = open(csvFile, 'w')
-        file.write('Path, File, Exif DateTime, Year, Month, Day, Hour, Minute, Sec'
-                   ', Total seconds since 1970-01-01\n')
-        exifFormat = '%Y:%m:%d %H:%M:%S'
-        for i in range(nFiles):
-            thePathFile = os.path.split(fileList[0])
-            thePath = thePathFile[0]
-            theFile = thePathFile[1]
-            theDt = datetime.datetime.strptime(dtimeList[i], exifFormat)
-            # parse date-time string to integers year/month/day/hour/minute/sec
-            total_sec_1970 = (theDt - datetime.datetime(1970, 1, 1)).total_seconds()
-            file.write("%s, %s, %s, %s, %d\n" % \
-                       (thePath, theFile, dtimeList[i], 
-                        theDt.strftime('%Y, %m, %d, %H, %M, %S'), 
-                        total_sec_1970))
-        file.close()
-    except:
-        print("# Error: savePhotoTimeTable() failed to write to file.")
-        return -2
-    
-        
-
-
-
-
-def getExifDateTime(fname):
-    img = Image.open(fname)
-    exif = img.getexif()
-    # tag_id 306: DateTime
-    # tag_id 36867: DateTimeOriginal
-    # tag_id 36868: DateTimeDigitized
-    exifDateTime = exif.get(306)
-    img.close()
-    return exifDateTime
-
-# fname = r'D:/ExpDataSamples/20220500_Brb/brb1/brb1_cam1_northGusset/IMG_4234.JPG'
-# img = Image.open(fname)
-# theExif = img.getexif()
-# for tag_id in theExif:
-#     # get the tag name, instead of human unreadable tag id
-#     tag = TAGS.get(tag_id, tag_id)
-#     data = theExif.get(tag_id)
-#     # decode bytes 
-#     if isinstance(data, bytes):
-#         data = data.decode()
-#     print(f"{tag:25}: {data}")
-# img.close()
-
-# for i in range(999999):
-#     tags = TAGS.get(i,i)
-#     if type(tags)==type('str'):
-#         if tags.find('Time') >= 0 or tags.find('time') >= 0 or\
-#             tags.find('Date') >= 0 or tags.find('date') >= 0:
-#             print('%d:%s', i, tags)
-        
         
