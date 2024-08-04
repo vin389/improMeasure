@@ -826,7 +826,7 @@ class StereosyncData():
 
         for ipoi in range(nP):
             # 0 base
-            self.bigTableKeys.append('tw.p%d'%(ipoi))
+            self.bigTableKeys.append('t.p%d'%(ipoi))
             self.bigTableKeys.append('xw.p%d'%(ipoi))
             self.bigTableKeys.append('yw.p%d'%(ipoi))
             self.bigTableKeys.append('zw.p%d'%(ipoi))
@@ -836,7 +836,7 @@ class StereosyncData():
             self.bigTableKeys.append('resvw1.p%d'%(ipoi))
             self.bigTableKeys.append('resvw2.p%d'%(ipoi))
             # 1 base
-            self.bigTableKeys_1base.append('tw.p%d'%(ipoi+1))
+            self.bigTableKeys_1base.append('t.p%d'%(ipoi+1))
             self.bigTableKeys_1base.append('xw.p%d'%(ipoi+1))
             self.bigTableKeys_1base.append('yw.p%d'%(ipoi+1))
             self.bigTableKeys_1base.append('zw.p%d'%(ipoi+1))
@@ -877,7 +877,7 @@ class StereosyncData():
         #     for iresv in range(10):
         #         self.bDic['resv%d.c%d'%(iresv+1,icam+1)]  =iresv+10*nP  +(10*nP+10)*icam
         # for ipoi in range(nP):
-        #     self.bDic['tw.p%d'%(ipoi+1)]=0+ipoi*10+(10*nP+10)*nc
+        #     self.bDic['t.p%d'%(ipoi+1)]=0+ipoi*10+(10*nP+10)*nc
         #     self.bDic['xw.p%d'%(ipoi+1)]=1+ipoi*10+(10*nP+10)*nc
         #     self.bDic['yw.p%d'%(ipoi+1)]=2+ipoi*10+(10*nP+10)*nc
         #     self.bDic['zw.p%d'%(ipoi+1)]=3+ipoi*10+(10*nP+10)*nc
@@ -1328,6 +1328,7 @@ if __name__ == '__main__':
              ss.bigTable[:,ss.bigTableKeys.index('xw.p0')]); ax.grid('on')
     plt.show()
     pass
+
     
     # 
     

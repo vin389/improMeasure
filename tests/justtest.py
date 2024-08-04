@@ -7,10 +7,6 @@ for i in range(len(mp4Files)):
     vid = cv.VideoCapture(mp4Files[0])
     vid.get(cv.CAP_)
     
-    
-
-
-
 
 
 
