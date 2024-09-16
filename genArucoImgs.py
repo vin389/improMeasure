@@ -18,6 +18,12 @@ def genArucoImgs(dict_id=-1, num_markers_x=-1, num_markers_y=-1,
         marker_size: int, size of each marker in pixels
         gap_size: int, size of the gap between markers in pixels
         filename: str, filename to save the image
+
+        If no argument is given, this function runs an interactive mode 
+        that asks user to input (from keyboard) the values of arguments 
+        one by one.
+    Returns:
+        img: np.array, the image with Aruco markers
     """
     # display all aruco dictionary names and ask user to choose one
     if dict_id == -1:
