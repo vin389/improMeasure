@@ -19,6 +19,7 @@ from calcStrain3d import icf_calcQ4Strain3d
 from icf_trackPoints import icf_trackPoints
 from calibChessboard import calibChessboard
 from videoFramesToPicsAndVideo import videoFramesToPicsAndVideo
+from genArucoImgs import genArucoImgs
 
 class improConsole2():
     # def load_config(self): 
@@ -158,6 +159,8 @@ class improConsole2():
             "Extracts frames from a video and saves them as images and a video")
 #        self.add_function('wallMonitor2', icf_wallMonitor_v2,
 #            "Runs wall crack and shear strain measurement")
+        self.add_function('genArucoImgs', genArucoImgs,
+            "Generates Aruco markers and saves them as an image")
 
     
 if __name__ == '__main__':

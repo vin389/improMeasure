@@ -28,6 +28,12 @@ def syncByTriangulation(xi1, xi2,
         image coordinates of a point in camera 2
     syncFrameRange : start and end (end is not included, python style) of 
                      camera 1 frames that user wants to do triangulation. 
+                        For example, if syncFrameRange is [100, 700], (or 
+                        (100, 700), anything with 2 integers that can 
+                        construct a 2-integer numpy array)
+                        the triangulation will be done over xi1[100:700] and
+                        xi2[100-tLag:700-tLag] where tLag is the time lag.
+                        (tLag is in the range of lagTrials)
     lagTrials : numpy array, (nTrials, ), np.int32
         trials of time lags, e.g., [-10,-8,-6,-4,-2,0,2,4] or
                         np.arange(-10,-5,2)
@@ -35,6 +41,12 @@ def syncByTriangulation(xi1, xi2,
                         than camera 1.
                         4 means the camera 2 started 4 frames later than
                         camera 1. 
+                        When the best lag is found, the function will find
+                        the best lag with higher precision by fitting a
+                        parabola around the best lag. For example, if the
+                        best lag is 4, the function will find the best lag
+                        by fitting a parabola around 4, and find the best
+                        lag with higher precision.
     cmat1 : numpy array, (3,3), np.float64
         camera matrix of camera 1
     dvec1 : numpy array, (n,), np.float64
@@ -89,6 +101,7 @@ def syncByTriangulation(xi1, xi2,
         rvec2 = cv2.Rodrigues(rvec2)[0]
     rvec2 = rvec2.reshape(3,1).astype(np.float64)
     tvec2 = tvec2.reshape(3,1).astype(np.float64)
+
     # plot inputs
     if toPlotXi:
         import matplotlib.pyplot as plt
@@ -209,11 +222,11 @@ if __name__ == '__main__':
     c1 = Camera()
     c1.setCmatByImgsizeFovs(imgSize, fovs);
     c1.dvec[0] = -0.05;
-    c1.setRvecTvecByPosAim([-5,0,0], [0,10,0])
+    c1.setRvecTvecByPosAim(pos=[-5,0,0], aim=[0,10,0])
     c2 = Camera()
     c2.setCmatByImgsizeFovs(imgSize, fovs);
     c2.dvec[0] = -0.1;
-    c2.setRvecTvecByPosAim([5,0,0], [0,10,0])
+    c2.setRvecTvecByPosAim(pos=[5,0,0], aim=[0,10,0])
     
     # synthetic motion
     # motion (coordinates) of target
@@ -257,6 +270,53 @@ if __name__ == '__main__':
     xi2_measure = np.zeros((nt2, 2), dtype=float)
     xi2_measure[:,0] = xi2_real_f_x(t2)    
     xi2_measure[:,1] = xi2_real_f_y(t2)
+
+    # if matplotlib is available, plot the objPoints in 3D space
+    try:
+        import matplotlib.pyplot as plt
+        fig3d = plt.figure()
+        ax3d = fig3d.add_subplot(111, projection='3d')
+        ax3d.plot(objPoints[:,0], objPoints[:,1], objPoints[:,2], label='objPoints')
+        ax3d.set_xlabel('X'); ax3d.set_ylabel('Y'); ax3d.set_zlabel('Z')
+        # set 3D plot aspect ratio to be equal
+        ax3d.set_box_aspect([np.ptp(objPoints[:,0]), 0.1, np.ptp(objPoints[:,2])])
+#        ax3d.set_box_aspect([1,1,1])
+        ax3d.legend()
+        plt.show()
+    except:
+        # if matplotlib is not available, print a message
+        print("matplotlib is not available. Cannot plot the 3D object points.")
+
+    # if matplotlib is available, plot the xi1_real_f_x and xi1_real_f_y, and xi2_real_f_x and xi2_real_f_y
+    try:
+        import matplotlib.pyplot as plt
+        fig_real, ax_real = plt.subplots()
+        fig_real.suptitle("Image coordinates (real without lag)")
+        ax_real.plot(tt, xi1_real[:,0], label='xi1_ux')
+        ax_real.plot(tt, xi1_real[:,1], label='xi1_uy')
+        ax_real.plot(tt, xi2_real[:,0], label='xi2_ux')
+        ax_real.plot(tt, xi2_real[:,1], label='xi2_uy')
+        ax_real.grid(True); ax_real.legend()
+        plt.show()
+    except:
+        # if matplotlib is not available, print a message
+        print("matplotlib is not available. Cannot plot the image coordinates (real without lag).")
+    
+    # if matplotlib is available, plot the image coordinates
+    try:
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots()
+        fig.suptitle("Image coordinates")
+        ax.plot(range(xi1_measure.shape[0]), xi1_measure[:,0]-xi1_measure[0,0], label='xi1_ux')
+        ax.plot(range(xi1_measure.shape[0]), xi1_measure[:,1]-xi1_measure[0,1], label='xi1_uy')
+        ax.plot(range(xi2_measure.shape[0]), xi2_measure[:,0]-xi2_measure[0,0], label='xi2_ux')
+        ax.plot(range(xi2_measure.shape[0]), xi2_measure[:,1]-xi2_measure[0,1], label='xi2_uy')
+        ax.grid(True); ax.legend()
+        plt.show()
+    except:
+        # if matplotlib is not available, print a message
+        print("matplotlib is not available. Cannot plot the image coordinates.")
+
     # syncByTriangulation
     syncFrameRange = (100, 700)
     lagTrials = np.linspace(-100., 100, 101)

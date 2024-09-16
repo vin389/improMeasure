@@ -285,7 +285,8 @@ def tkCalib():
     except:
         print("Warning: Cannot load tkCalib_init_cmatGuess.npy")
         edCmatGuess.delete(0., tk.END)
-        edCmatGuess.insert(0., ' 5000. 0 0 \n 0 5000. 0 \n 1999.5 1999.5 1')
+#        edCmatGuess.insert(0., ' 5000. 0 0 \n 0 5000. 0 \n 1999.5 1999.5 1')  # This is wrong. Incorrectly written in transposed way.
+        edCmatGuess.insert(0., ' 5000. 0 1999.5 \n 0 5000. 1999.5 \n 0 0 1')  # revised on 2024/08/28
     #   button 'Camera mat (init guess)' as a label
     # defind button command function 
     def btCmatGuess_clicked():

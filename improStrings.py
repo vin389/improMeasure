@@ -2,12 +2,15 @@ import numpy as np
 
 
 def npFromTupleNp(theTupleNp):
-    theShape = theTupleNp[0].shape
-    theLen = len(theTupleNp)
-    newShape = (theLen,) + theShape
-    theMat = np.zeros(newShape, float)
-    for i in range(theLen):
-        theMat[i] = theTupleNp[i]
+    try:
+        theShape = theTupleNp[0].shape
+        theLen = len(theTupleNp)
+        newShape = (theLen,) + theShape
+        theMat = np.zeros(newShape, float)
+        for i in range(theLen):
+            theMat[i] = theTupleNp[i]
+    except:
+        theMat = np.array([])
     return theMat
     
 
