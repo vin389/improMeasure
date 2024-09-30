@@ -110,7 +110,10 @@ def genArucoImgs(dict_id=-1, num_markers_x=-1, num_markers_y=-1,
             if filename != ".":
                 cv2.imwrite(filename, img)
     else:
-        cv2.imwrite(filename, img)
+        if len(filename) > 1:
+            cv2.imwrite(filename, img)
+        else:
+            print("# The filename is too short. The image is not saved.")
 
     # return img
     return img
@@ -124,11 +127,11 @@ if __name__ == "__main__":
         filename=os.path.join(save_directory, "dict_3.png"), 
         displayInfo=True)
 
-    img = genArucoImgs(dict_id=11, # DICT_6X6_1000
-        num_markers_x=1, num_markers_y=2,
-        marker_size=200, gap_size=20, 
-        filename=os.path.join(save_directory, "dict_11.png"), 
-        displayInfo=True)
+#    img = genArucoImgs(dict_id=11, # DICT_6X6_1000
+#        num_markers_x=1, num_markers_y=2,
+#        marker_size=200, gap_size=20, 
+#        filename=os.path.join(save_directory, "dict_11.png"), 
+#        displayInfo=True)
 
     print("# Done.")
 
