@@ -1239,7 +1239,7 @@ class StereosyncData():
 
 
 if __name__ == '__main__':
-    workDir = r'D:\ExpDataSamples\20240600-CarletonShakeTableCeilingSystem\preparation_demo10'
+    workDir = r'D:\ExpDataSamples\20240600_CarletonShakeTableCeilingSystem\preparation_demo10'
     fVideo1 = 'Cam 1.mp4'
     fVideo2 = 'Cam 2.mp4'
     fCalib1 = 'cam1_parameters.csv'
