@@ -579,7 +579,14 @@ def plot_triangle_on_axes(p1, p2, p3, color, alpha=1.0, ax=[]):
     xs = [p1[0], p2[0], p3[0]]
     ys = [p1[1], p2[1], p3[1]]
     zs = [p1[2], p2[2], p3[2]]
-    ax.plot_trisurf(xs, ys, zs, color=color, alpha=alpha)
+    plot_option = 2
+    if plot_option == 1:
+        ax.plot_trisurf(xs, ys, zs, color=color, alpha=alpha)
+    else:
+        # if plot_trisurf fails (in case that surface projection to x-y is collinear which makes _qhull.delaunay() failed.
+        from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+        triangle = Poly3DCollection([[p1,p2,p3]], facecolors=color, linewidths=0, alpha=alpha)
+        ax.add_collection3d(triangle)   
     return ax
 
 def plot_quad_on_axes(p1, p2, p3, p4, color, alpha=1.0, ax=[]):
@@ -889,11 +896,13 @@ class Camera:
         # fovs: [fov of x, fov of y] in degree 
         # pp: the principal point [cx, cy] in pixel, 
         #     default (None) is at center.
-        if np.array(fovs).size == 1:
-            fovs = np.array([fovs, fovs],dtype=float)
-        w = imgSize[0]; h = imgSize[1];
-        fx = .5*w / np.tan(.5*fovs[0]*np.pi/180.)
-        fy = .5*h / np.tan(.5*fovs[1]*np.pi/180.)
+        w = imgSize[0]; h = imgSize[1]
+        if np.array(fovs).size == 1: # if fovs is a scalar 
+            fx = .5*w / np.tan(.5*fovs*np.pi/180.)
+            fy = fx
+        else:
+            fx = .5*w / np.tan(.5*fovs[0]*np.pi/180.)
+            fy = .5*h / np.tan(.5*fovs[1]*np.pi/180.)
         if type(pp) == type(None):
             pp = (np.array(imgSize)-1.) / 2.
         cx = pp[0]; cy = pp[1]; 
@@ -930,11 +939,10 @@ class Camera:
         self.tvec = new_tvec
         return
     
-    def plotCameraPyramid(self, color='green', alpha=0.5, axes=[]):
+    def plotCameraPyramid(self, color='green', alpha=0.5, axes=[], pyramid_height=0.1):
         # import packages
         import matplotlib.pyplot as plt
         #
-        pyramid_height = 100.0 # physical size, e.g., mm or m
         r44inv = np.linalg.inv(self.rmat44())
         vx = np.array(r44inv[0:3,0]).flatten()
         vy = np.array(r44inv[0:3,1]).flatten()
@@ -972,7 +980,7 @@ class Camera:
         axes.set_ylabel('Global Y')
         axes.set_zlabel('Global Z')
         #
-        plt.show()
+        # plt.show()
         return axes
 
     def saveToFile(self, file):
@@ -1024,6 +1032,7 @@ def test_Camera():
     cam.plotCameraPyramid()
     
 def test_camera_2():
+    import matplotlib.pyplot as plt
     cam1 = Camera()
     cam1.imgSize=(3840,2160)
     cam1.cmat = np.array([5e3,0,1919.5, 0, 5e3, 1079.5, 0,0,1.]).reshape(3,3)
@@ -1045,6 +1054,8 @@ def test_camera_2():
     plot_quad_on_axes([ -50, 0, -50], [ 250, 0, -50],
                       [ 250, 0, 150], [ -50, 0, 150], 
                       color='blue', alpha=0.5, ax=ax)
+    plt.show()
+
     
 if __name__ == '__main__':
     test_camera_2()

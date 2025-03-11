@@ -1,5 +1,5 @@
 import cv2 as cv
-
+import numpy as np 
 
 def imshow2(winname, img, winmax=(1600, 900), interp=cv.INTER_CUBIC):
     """
@@ -262,7 +262,50 @@ def test_imshow2():
     img = cv.imread(image_path)
     imshow2("TEST IMSHOW2", img, interp=cv.INTER_NEAREST)
 
-# test_imshow2()
+
+# if this script is run as a standalone script, run test_imshow2()
+if __name__ == "__main__":
+    # if variable winname does not exist or it is not a string,
+    # ask user to input a window name by keyboard
+    if "winname" not in locals() or type(winname) != str:
+        winname = input("# Input a window name (e.g., Test imshow2):")
+    # if is not a string, or winname is empty, assign a default name
+    if type(winname) != str or winname == "":
+        winname = "TEST IMSHOW2"
+    # if variable img is not defined, or it is not a numpy array, or it is empty
+    # ask user to input an image file path through a tk file dialog
+    if "img" not in locals() or type(img) != np.ndarray or img.size == 0:
+        import tkinter as tk
+        from tkinter import filedialog
+        tk_root = tk.Tk()
+        tk_root.withdraw()
+        file_path = filedialog.askopenfilename()
+        img = cv.imread(file_path)    
+        print("# Image file path: %s" % file_path)
+        print("# Image shape: %s" % str(img.shape))
+    # if variable winmax is not defined, or it is not a tuple of two integers, or it is empty
+    # assign a default value
+    # a valid winmax could be (1600, 900) or [1600, 900], or a numpy form of them.
+    try: 
+        winmax = np.array(winmax, dtype=int).flatten()
+        winmax = tuple(winmax[0:2])
+    except:
+        # if winmax cannot be recognized, ask user to input a window size by entering two integers
+        winmax = input("# Input window size (e.g., 1600 900):")
+        winmax = winmax.split()
+        winmax = tuple([int(winmax[0]), int(winmax[1])])
+
+    
+    # ... 
+
+
+
+
+
+
+    winname = "TEST IMSHOW2"
+
+    test_imshow2()
 
 
 

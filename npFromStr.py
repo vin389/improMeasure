@@ -9,7 +9,9 @@ def npFromStr(theStr: str, dtype=float):
     For example:
         npFromStr('1 2 3') ==> [1., 2., 3.]
         npFromStr('[[1, 2], [nan, 4]]') ==> [1., 2., nan, 4.]
-        npFromStr('file c:/test/test.csv') ==> (read the file by np.loadtxt)
+        npFromStr('file c:/test/test.csv') ==> (read the file by np.loadtxt with delimiter=',')
+        npFromStr('file c:/test/test.txt') ==> (read the file by np.loadtxt with delimiter=' ')
+        npFromStr('file c:/test/test.npy') ==> (read the file by np.load)
 
     Parameters
     ----------
@@ -24,9 +26,23 @@ def npFromStr(theStr: str, dtype=float):
         the 1D np.array converted from the theStr.
 
     """
+    if type(theStr) == np.ndarray:
+        return theStr.flatten()
     # Check if the string starts with 'file '
     if type(theStr) == str and theStr.strip().split()[0].lower() == 'file':
-        mat = np.loadtxt(theStr.strip().split()[1])
+        filename = theStr.strip().split()[1]
+        if filename.endswith('.csv'):
+            mat = np.loadtxt(filename, delimiter=',')
+        elif filename.endswith('.txt'):
+            mat = np.loadtxt(filename)
+        elif filename.endswith('.npy'):
+            mat = np.load(filename)
+        else:
+            try:
+                mat = np.loadtxt(filename)
+            except:
+                print("Error: Cannot read the file: ", filename)
+                mat = None
         return mat
     
     if type(theStr) == str:
