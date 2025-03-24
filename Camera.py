@@ -193,7 +193,9 @@ def rvecTvecFromR44(r44):
 
 def cameraParametersToString(imgSize, rvec, tvec, cmat, dvec):
     # generate a string that is easy to read
-    imgSize = np.array(imgSize).flatten()
+    imgSize = np.array(
+        
+    ).flatten()
     r33, jmat= cv.Rodrigues(rvec.reshape(-1))
     r44 = np.eye(4, dtype=float)
     r44[0:3,0:3] = r33
