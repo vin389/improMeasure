@@ -83,9 +83,10 @@ def tkCalib():
     # create a pair of radio buttons
     rbVar = tk.IntVar()
     rb1 = tk.Radiobutton(frame1, text='single-image calib', variable=rbVar, value=0, command=rb_clicked)
-    rb1.pack()
+    # align the radio buttons to the left side of the window
+    rb1.pack(anchor=tk.W)
     rb2 = tk.Radiobutton(frame1, text='chessboard calib', variable=rbVar, value=1, command=rb_clicked)
-    rb2.pack()
+    rb2.pack(anchor=tk.W)
     # set initial value of radio button
     rbVar.set(0)
 
@@ -423,7 +424,7 @@ def tkCalib():
         # clone the object points for all images. Stack vertically, make it 3D, i.e., nCbFiles * (nCornersX * nCornersY) * 3
         corners_object_points = np.tile(corners_object_points_one_picture, (nCbFiles, 1, 1))
         # print it to text box
-        theStr = stringFromNp(corners_object_points, ftype='txtf', sep='\t')
+        theStr = stringFromNp(corners_object_points.reshape(-1,3), ftype='txtf', sep='\t')
         edCoord3d.delete(0., tk.END)
         edCoord3d.insert(0., theStr)
         # try to find corners from the images
@@ -456,12 +457,13 @@ def tkCalib():
             return
         # 
         nFound = len(imgPointsList)
-        # change the edFile text to the files that corners are found
+        # change the edFile text to the files that corners are successfully found
         theStr = '\n'.join([cbFiles[i] for i in cornerFoundPhotoIndices])
         edFile.delete(0., tk.END)
         edFile.insert(0., theStr)
         # convert imgPointsList to imgPoints2f
-        imgPoints2f = np.array(imgPointsList).reshape(nFound, -1, 2)
+#        imgPoints2f = np.array(imgPointsList).reshape(nFound, -1, 2)
+        imgPoints2f = np.array(imgPointsList).reshape(-1, 2)
         # print detected corners to 
         theStr = stringFromNp(imgPoints2f, sep='\t')
         edCoordImg.delete(0., tk.END)
@@ -752,6 +754,11 @@ def tkCalib():
         # calculate camera position
         #   rvecs and tvecs would be a tuple of 3x1 float array(s)
 #        campos = tvecs.copy() # make campos the same type and shape with tvecs
+        edCampos.delete(0., tk.END)
+        edCoordPrj.delete(0., tk.END)
+        edPrjErrors.delete(0., tk.END)
+        edOneCol.delete(0., tk.END)
+        # calculate camera position, project points, and calculate projection errors
         for icam in range(nCbPhotos):
             campos = np.zeros((3, 1), dtype=float)
             r3 = cv.Rodrigues(rvecs[icam])[0]
@@ -779,7 +786,7 @@ def tkCalib():
             vec31[8:17, 0] = cmat.reshape((9, 1))[0:9, 0]
             lenDvec = dvec.size
             vec31[17:17+lenDvec, 0] = dvec.reshape((lenDvec, 1))[0:lenDvec, 0]
-            strOneCol = stringFromNp(vec31.flatten(), sep='\t') + "\n\n"
+            strOneCol = stringFromNp(vec31.flatten(), sep='\t')
             edOneCol.insert(tk.END, strOneCol+'\n')
         return    
     # set button command function 
@@ -838,137 +845,195 @@ def tkCalib():
         edGridZs.delete(0, tk.END)
     # define button command function
     def btDrawPoints_clicked(undistort=False):
-        # check ratio button 
+
+        # In single-photo calibration, this function draw on a single image
+        # In chessboard calibration, this function draw images defined by user in 
+        #  "index of chessboard photos" 
+        # imgidx_start is the starting index of the image to be drawn
+        # imgidx_end is the ending index of the image to be drawn
         if rbVar.get() == 0: # single-photo calibration
-            print("# single-photo calibration")
-        else:
-            print("# chessboard calibration")
-        # get background image
-        try:
+            imgidx_start = 1
+            imgidx_end = 1
+            nPhoto = 1
+        else: # chessboard calibration
+            imgidx_str = edGridImgIdx.get()
+            # check if imgidx_str has a colon
+            if ':' in imgidx_str:
+                imgidx_start = int(imgidx_str.split(':')[0])
+                imgidx_end = int(imgidx_str.split(':')[1])
+            else:
+                imgidx_start = int(imgidx_str)
+                imgidx_end = int(imgidx_str)
+            # number of photos is number of files in edFile
+            nPhoto = len(edFile.get(0., tk.END).split())
+            if imgidx_end > nPhoto:
+                imgidx_end = nPhoto
+            print("# imgidx_start = %d, imgidx_end = %d" % (imgidx_start, imgidx_end))
+        # check if imgidx_start and imgidx_end are valid
+        if imgidx_start < 1 or imgidx_end < 1:
+            tkCalib_printMessage("# Error: Invalid index of chessboard photos.")
+            return
+        # start the loop of photos
+        for imgidx in range(imgidx_start, imgidx_end+1):
+            # check ratio button 
+            if rbVar.get() == 0: # single-photo calibration
+                print("# single-photo calibration")
+            else:
+                print("# chessboard calibration")
+            # get background image
+            try:
+                fname = edFile.get(0., tk.END)
+                # check if it is single-photo calibration or chessboard calibration
+                if rbVar.get() == 0: # single-photo calibration
+                    fname = fname.split()[0]
+                else: # chessboard calibration
+#                    imgidx = int(edGridImgIdx.get())
+                    fname = fname.split()[imgidx-1]
+                print("The background file is %s " % fname)
+                bkimg = cv.imread(fname)
+                if type(bkimg) != type(None) and bkimg.shape[0] > 0:
+                    print("The image size is %d/%d (w/d)" % (bkimg.shape[1], bkimg.shape[0]))
+                else:
+                    tkCalib_printMessage("# Error: Cannot read background image %s"
+                                        % bkimg)
+                    raise Exception("invalid_image")
+            except:
+                imgSize = imgSizeFromBt()
+                bkimg = np.ones((imgSize[1], imgSize[0], 3), dtype=np.uint8) * 255            
+            # get intrinsic parameters
+            try:
+                # get cmat
+                strCmat = edCmat.get(0., tk.END)
+                cmat = npFromString(strCmat).reshape(3, 3)
+                # get dvec
+                strDvec = edDvec.get(0., tk.END)
+                dvec = npFromString(strDvec).reshape(1, -1)
+            except:
+    #            tkCalib_printMessage("# Error: Cannot get calibrated result.")
+                tk.messagebox.showerror(title="Error", message="# Error: Cannot get calibrated result..")
+                return            
+            # load image
+            imgd = bkimg.copy()
+            # get projected points
+            try:
+                strPrjPoints= edCoordPrj.get(0., tk.END)
+                prjPointsAll = npFromString(strPrjPoints).reshape((-1, 2))
+                # if it is chessboard calibration, we need to get only a part of prjPointsAll
+                if rbVar.get() == 0: # single-photo calibration
+                    prjPointsThisPhoto = prjPointsAll
+                else: # chessboard calibration
+#                    imgidx = int(edGridImgIdx.get())
+                    nCornersX = int(edCbParams.get(0., tk.END).split()[0])
+                    nCornersY = int(edCbParams.get(0., tk.END).split()[1])
+                    prjPointsThisPhoto = prjPointsAll.reshape(-1, nCornersX*nCornersY, 2)[imgidx-1]
+                if prjPointsThisPhoto.shape[0] <= 0:
+                    raise Exception('invalid_proPoints')
+                # draw image points
+                color=[0,255,255]; 
+                markerType=cv.MARKER_SQUARE
+                markerSize=max(imgd.shape[0]//100, 3)
+                thickness=max(imgd.shape[0]//400, 1)
+                lineType=8
+                imgd = drawPoints(imgd, prjPointsThisPhoto, color=color, markerType=markerType, 
+                                markerSize=markerSize,
+                                thickness=thickness, lineType=lineType, savefile='.')
+            except:
+                tkCalib_printMessage('# No projected points. Skipping plotting them.')
+            # draw grid mesh (3D) on the undistorted image
+            try:
+                strRvec = edRvecs.get(0., tk.END)
+                strTvec = edTvecs.get(0., tk.END)
+                if rbVar.get() == 0: # single-photo calibration
+                    rvec = npFromString(strRvec).reshape(3, -1)
+                    tvec = npFromString(strTvec).reshape(3, -1)
+                else:
+                    rvec = npFromString(strRvec).reshape(-1, 3)[imgidx-1].reshape(3, -1)
+                    tvec = npFromString(strTvec).reshape(-1, 3)[imgidx-1].reshape(3, -1)
+                # get grid Xs Ys Zs
+                gridXs = npFromString(edGridXs.get()).reshape((-1)).astype(np.float64)
+                gridYs = npFromString(edGridYs.get()).reshape((-1)).astype(np.float64)
+                gridZs = npFromString(edGridZs.get()).reshape((-1)).astype(np.float64)
+                if gridXs.size > 0 and gridYs.size > 0 and gridZs.size > 0:
+                    imgd = draw3dMesh(img=imgd, cmat=cmat, dvec=dvec,
+                                    rvec=rvec, tvec=tvec,
+                                    meshx=gridXs, meshy=gridYs, meshz=gridZs, 
+                                    color=(64,255,255), thickness=1, shift=0, 
+                                    savefile='.')
+            except:
+                print("# Skipping plotting grid.")
+            # get image points
+            try:
+                strPointsImg= edCoordImg.get(0., tk.END)
+                if rbVar.get() == 0: # single-photo calibration
+                    points2d = npFromString(strPointsImg).reshape((-1, 2))
+                else:                # chessboard calibration
+#                    imgidx = int(edGridImgIdx.get())
+                    nCornersX = int(edCbParams.get(0., tk.END).split()[0])
+                    nCornersY = int(edCbParams.get(0., tk.END).split()[1])
+                    points2d = npFromString(strPointsImg).reshape(-1, nCornersX*nCornersY, 2)[imgidx-1].reshape(-1, 2)
+                if points2d.shape[0] <= 0:
+                    raise Exception('invalid_image_points')
+                # draw image points
+                color=[0,255,0]; 
+                markerType=cv.MARKER_CROSS
+                markerSize=max(4, imgd.shape[0] // 100) # 40
+                thickness=max(1, imgd.shape[0] // 400) # 10
+                lineType=8
+                imgd = drawPoints(imgd, points2d, color=color, markerType=markerType, 
+                                markerSize=markerSize,
+                                thickness=thickness, lineType=lineType, savefile='.')
+            except:
+                tkCalib_printMessage('# No image point. Skipping plotting image points.')
+            # if undistort is true, undistort the image imgd
+            if undistort:
+                img_ud = cv.undistort(imgd, cmat, dvec)
+                img_show = img_ud
+            else:
+                img_show = imgd
+            # show drawn image on the screen 
+    #        winW = win.winfo_width()
+    #        winH = win.winfo_height()
+    #        imgr = cv.resize(imgd, (winW, winH))
+    #        cv.imshow("Points", imgr); cv.waitKey(0); 
+            imshow2("Points", img_show, winmax=(1600, 800), interp=cv.INTER_LANCZOS4)
+            try:
+                cv.destroyWindow("Points")
+            except:
+                None
+            # save the image to file
+            # the file is located under a directory named tkCalib_reprojection_images
+            # if this directory does not exist, create it
             fname = edFile.get(0., tk.END)
-            # check if it is single-photo calibration or chessboard calibration
-            if rbVar.get() == 0: # single-photo calibration
-                fname = fname.split()[0]
-            else: # chessboard calibration
-                imgidx = int(edGridImgIdx.get())
-                fname = fname.split()[imgidx-1]
-            print("The background file is %s " % fname)
-            bkimg = cv.imread(fname)
-            if type(bkimg) != type(None) and bkimg.shape[0] > 0:
-                print("The image size is %d/%d (w/d)" % (bkimg.shape[1], bkimg.shape[0]))
+            fname_first = fname.split()[0]
+            initDir = os.path.split(fname_first)[0]
+            fname_this = fname.split()[imgidx-1]
+            fname_this_base = os.path.split(fname_this)[1]
+            try:
+                os.makedirs(os.path.join(initDir, 'tkCalib_reprojection_images'))
+            except:
+                None
+            theDir = os.path.join(initDir, 'tkCalib_reprojection_images')
+            if undistort:
+                # if undistort is true, save the image as "undistort_<fname_first_base>"
+                theFullPath = os.path.join(theDir, 'undistort_' + fname_this_base)
             else:
-                tkCalib_printMessage("# Error: Cannot read background image %s"
-                                     % bkimg)
-                raise Exception("invalid_image")
-        except:
-            imgSize = imgSizeFromBt()
-            bkimg = np.ones((imgSize[1], imgSize[0], 3), dtype=np.uint8) * 255            
-        # get intrinsic parameters
-        try:
-            # get cmat
-            strCmat = edCmat.get(0., tk.END)
-            cmat = npFromString(strCmat).reshape(3, 3)
-            # get dvec
-            strDvec = edDvec.get(0., tk.END)
-            dvec = npFromString(strDvec).reshape(1, -1)
-        except:
-#            tkCalib_printMessage("# Error: Cannot get calibrated result.")
-            tk.messagebox.showerror(title="Error", message="# Error: Cannot get calibrated result..")
-            return            
-        # load image
-        imgd = bkimg.copy()
-        # get projected points
-        try:
-            strPrjPoints= edCoordPrj.get(0., tk.END)
-            prjPointsAll = npFromString(strPrjPoints).reshape((-1, 2))
-            # if it is chessboard calibration, we need to get only a part of prjPointsAll
-            if rbVar.get() == 0: # single-photo calibration
-                prjPointsThisPhoto = prjPointsAll
-            else: # chessboard calibration
-                imgidx = int(edGridImgIdx.get())
-                nCornersX = int(edCbParams.get(0., tk.END).split()[0])
-                nCornersY = int(edCbParams.get(0., tk.END).split()[1])
-                prjPointsThisPhoto = prjPointsAll.reshape(-1, nCornersX*nCornersY, 2)[imgidx-1]
-            if prjPointsThisPhoto.shape[0] <= 0:
-                raise Exception('invalid_proPoints')
-            # draw image points
-            color=[0,255,255]; 
-            markerType=cv.MARKER_SQUARE
-            markerSize=max(imgd.shape[0]//100, 3)
-            thickness=max(imgd.shape[0]//400, 1)
-            lineType=8
-            imgd = drawPoints(imgd, prjPointsThisPhoto, color=color, markerType=markerType, 
-                              markerSize=markerSize,
-                              thickness=thickness, lineType=lineType, savefile='.')
-        except:
-            tkCalib_printMessage('# No projected points. Skipping plotting them.')
-        # draw grid mesh (3D) on the undistorted image
-        try:
-            strRvec = edRvecs.get(0., tk.END)
-            strTvec = edTvecs.get(0., tk.END)
-            if rbVar.get() == 0: # single-photo calibration
-                rvec = npFromString(strRvec).reshape(3, -1)
-                tvec = npFromString(strTvec).reshape(3, -1)
-            else:
-                rvec = npFromString(strRvec).reshape(-1, 3)[imgidx-1].reshape(3, -1)
-                tvec = npFromString(strTvec).reshape(-1, 3)[imgidx-1].reshape(3, -1)
-            # get grid Xs Ys Zs
-            gridXs = npFromString(edGridXs.get()).reshape((-1)).astype(np.float64)
-            gridYs = npFromString(edGridYs.get()).reshape((-1)).astype(np.float64)
-            gridZs = npFromString(edGridZs.get()).reshape((-1)).astype(np.float64)
-            if gridXs.size > 0 and gridYs.size > 0 and gridZs.size > 0:
-                imgd = draw3dMesh(img=imgd, cmat=cmat, dvec=dvec,
-                                  rvec=rvec, tvec=tvec,
-                                  meshx=gridXs, meshy=gridYs, meshz=gridZs, 
-                                  color=(64,255,255), thickness=2, shift=0, 
-                                  savefile='.')
-        except:
-            print("# Skipping plotting grid.")
-        # get image points
-        try:
-            strPointsImg= edCoordImg.get(0., tk.END)
-            if rbVar.get() == 0: # single-photo calibration
-                points2d = npFromString(strPointsImg).reshape((-1, 2))
-            else:                # chessboard calibration
-                imgidx = int(edGridImgIdx.get())
-                nCornersX = int(edCbParams.get(0., tk.END).split()[0])
-                nCornersY = int(edCbParams.get(0., tk.END).split()[1])
-                points2d = npFromString(strPointsImg).reshape(-1, nCornersX*nCornersY, 2)[imgidx-1].reshape(-1, 2)
-            if points2d.shape[0] <= 0:
-                raise Exception('invalid_image_points')
-            # draw image points
-            color=[0,255,0]; 
-            markerType=cv.MARKER_CROSS
-            markerSize=max(4, imgd.shape[0] // 100) # 40
-            thickness=max(1, imgd.shape[0] // 400) # 10
-            lineType=8
-            imgd = drawPoints(imgd, points2d, color=color, markerType=markerType, 
-                              markerSize=markerSize,
-                              thickness=thickness, lineType=lineType, savefile='.')
-        except:
-            tkCalib_printMessage('# No image point. Skipping plotting image points.')
-        # show drawn image on the screen 
-#        winW = win.winfo_width()
-#        winH = win.winfo_height()
-#        imgr = cv.resize(imgd, (winW, winH))
-#        cv.imshow("Points", imgr); cv.waitKey(0); 
-        imshow2("Points", imgd, winmax=(1600, 800), interp=cv.INTER_LANCZOS4)
-        try:
-            cv.destroyWindow("Points")
-        except:
-            None
-        # ask if user wants to save the image to file or not
-        fname = edFile.get(0., tk.END)
-        fname = fname.split()[0]
-        initDir = os.path.split(fname)[0]
-        ufileDirFile = uiputfile("Save image to file ...", initialDirectory=initDir)
-        # if xfile is selected
-        if (type(ufileDirFile) == tuple or type(ufileDirFile) == list) and \
-            len(ufileDirFile) >= 2 and type(ufileDirFile[0]) == str and \
-            len(ufileDirFile[1]) >= 1:
-            # save image to selected file
-            ufile = os.path.join(ufileDirFile[0], ufileDirFile[1])
-            cv.imwrite(ufile, imgd)        
+                # if undistort is false, save the image as "original_<fname>"
+                theFullPath = os.path.join(theDir, 'original_' + fname_this_base)
+            # save image to the directory
+            cv.imwrite(theFullPath, img_show)
+
+        # # ask if user wants to save the image to file or not
+        # fname = edFile.get(0., tk.END)
+        # fname = fname.split()[0]
+        # initDir = os.path.split(fname)[0]
+        # ufileDirFile = uiputfile("Save image to file ...", initialDirectory=initDir)
+        # # if xfile is selected
+        # if (type(ufileDirFile) == tuple or type(ufileDirFile) == list) and \
+        #     len(ufileDirFile) >= 2 and type(ufileDirFile[0]) == str and \
+        #     len(ufileDirFile[1]) >= 1:
+        #     # save image to selected file
+        #     ufile = os.path.join(ufileDirFile[0], ufileDirFile[1])
+        #     cv.imwrite(ufile, img_show)        
         return
     # set button command function
     btDrawPoints.configure(command=btDrawPoints_clicked)
@@ -1018,9 +1083,25 @@ def tkCalib():
         if (type(ufileDirFile) == tuple or type(ufileDirFile) == list) and \
             len(ufileDirFile) >= 2 and type(ufileDirFile[0]) == str and \
             len(ufileDirFile[1]) >= 1:
+            # if rvec and tvec have multiple vectors (i.e., chessboard calibration)
+            if rvec.shape[1] > 1 and tvec.shape[1] > 1:
+                # get the Index of chessboard photos (1-based index) (edGridImgIdx)
+                try:
+                    imgidx = int(edGridImgIdx.get())
+                except:
+                    tkCalib_printMessage('# Warning: Cannot get index of chessboard photos. Set to 1 (first photo)')
+                    imgidx = 1
+                # get rvec and tvec of the selected photo
+                rvec_save_to_file = rvec[:, imgidx-1].reshape(3, -1)
+                tvec_save_to_file = tvec[:, imgidx-1].reshape(3, -1)
+            else:
+                # get rvec and tvec of the selected photo
+                rvec_save_to_file = rvec.reshape(3, -1)
+                tvec_save_to_file = tvec.reshape(3, -1)
+            # get the file name
             # save image to selected file
             ufile = os.path.join(ufileDirFile[0], ufileDirFile[1])
-            writeCamera(ufile, imgSize, rvec, tvec, cmat, dvec)
+            writeCamera(ufile, imgSize, rvec_save_to_file, tvec_save_to_file, cmat, dvec)
         #
         return
     # set button command function 

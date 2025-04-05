@@ -1,2 +1,11 @@
-D:/yuansen/ImPro/improMeasure/examples/chessboard_photos/bouguet/Image9.tif
-D:/yuansen/ImPro/improMeasure/examples/chessboard_photos/bouguet/Image20.tif
+D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_000.JPG
+D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_001.JPG
+D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_002.JPG
+D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_003.JPG
+D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_004.JPG
+D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_005.JPG
+D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_007.JPG
+D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_008.JPG
+D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_009.JPG
+D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_010.JPG
+
