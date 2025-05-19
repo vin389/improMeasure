@@ -1,0 +1,30 @@
+# camera parameters for camera 0
+# width and height of image in pixels
+3841
+2161
+# rotation vector (rvec)
+0.100000
+0.200000
+0.300000
+# translational vector (tvec)
+0.400000
+0.500000
+0.600000
+# camera matrix (3x3) (cmat)
+1921.000000
+0.000000
+1919.400000
+0.000000
+1921.000000
+1079.400000
+0.000000
+0.000000
+1.000000
+# distortion coefficients (4x1 to 8x1) (dvec)
+0.100000
+0.200000
+0.300000
+0.400000
+0.500000
+0.000000
+0.000000

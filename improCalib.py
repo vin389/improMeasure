@@ -219,8 +219,8 @@ def countCalibPoints(points3d: np.ndarray, points2d: np.ndarray):
                 nValidCalibPoints += 1
         # idxAllToValid would be array([0,1,-1,2,-1], dtype=uint8)
         # idxValidToAll would be array([0,1,3])
-        idxAllToValid = np.ones(npts2d, dtype=np.uint8) * (-1)
-        idxValidToAll = np.ones(nValidCalibPoints, dtype=np.uint8) * (-1)
+        idxAllToValid = np.ones(npts2d, dtype=np.int8) * (-1)
+        idxValidToAll = np.ones(nValidCalibPoints, dtype=np.int8) * (-1)
         validCount = 0
         for i in range(npts2d):
             if validCalibPoints[i] >= 1:

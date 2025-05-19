@@ -16,7 +16,7 @@ import numpy as np
 #   pos3Ds = create_synthetic_3d_points_cube2(
 #       center=(0.0, 0.0, 2.0), 
 #       edges=(5.4, 5.4, 2.4), 
-#       npoints_per_edge=(10, 10, 3+))
+#       npoints_per_edge=(10, 10, 3))
 def create_synthetic_3d_points_cube2(center=(0.0, 0.0, 0.0), edges=(1.0, 1.0, 1.0), npoints_per_edge=(10, 10, 10)):
     # if edges is a single value, convert it to a tuple of three values
     if isinstance(edges, (int, float)):

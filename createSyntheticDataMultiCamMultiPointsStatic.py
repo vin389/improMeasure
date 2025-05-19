@@ -1,8 +1,7 @@
 import cv2
 import numpy as np
 from Camera import Camera 
-from createSynthetic3dPoints import createSynthetic3dPoints, plot_3dPoints_and_sphere
-
+from create_synthetic_3d_points import create_synthetic_3d_points, plot_3dPoints_and_sphere
 
 
 
@@ -27,7 +26,8 @@ def createSyntheticDataMultCamMultiPointsStatic(
     #     in a sphere, which center is at CenterOfPointRange, and radius 
     #     is radiusOfPointRange, and store 
     #     them in a list (truePos3Ds) which is a nPoints x 3 numpy array.
-    truePos3Ds = createSynthetic3dPoints(center=centerOfPointRange, radius=radiusOfPointRange, nPoints=nPoints)
+    #truePos3Ds = createSynthetic3dPoints(center=centerOfPointRange, radius=radiusOfPointRange, nPoints=nPoints)
+    truePos3Ds = create_synthetic_3d_points(center=centerOfPointRange, radius=radiusOfPointRange, nPoints=nPoints)
     # print data of each point in this form: (x, y, z). Distance to centerOfPointRange: d
     print("*"*60+"# Step 1: create truePos3Ds, random 3D points in a unit sphere.")
     for i in range(nPoints):
@@ -49,6 +49,7 @@ def createSyntheticDataMultCamMultiPointsStatic(
         cameraPos = np.array([camx, camy, camz])
         # append an empty Camera into the list
         cameras.append(Camera())
+        cameras[i].imgSize = (imgSize[0], imgSize[1])
         cameras[i].setRvecTvecByPosAim(cameraPos, centerOfPointRange)
         cameras[i].setCmatByImgsizeFovs(imgSize, camFovx)
         cameras[i].dvec = np.array(distCoeffs, dtype=float).reshape(-1, 1)
@@ -125,7 +126,7 @@ def test_createSyntheticDataMultCamMultiPointsStatic():
             radiusOfPointRange=float(radiusOfPointRangeEntry.get()),
             imgSize=eval(imgSizeEntry.get()),
             camFovx=float(camFovxEntry.get()),
-            distCoeffs=eval(distCoeffEntry.get()))
+            distCoeffs=eval(distCoeffsEntry.get()))
         plot_3dPoints_and_sphere(truePos3Ds, centerOfPointRange, radiusOfPointRange)
 
 

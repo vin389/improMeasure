@@ -1,0 +1,152 @@
+Current Domain Information
+	Current Time: 0
+	Committed Time: 0
+NODE DATA: NumNodes: 3
+
+numComponents: 3
+
+ Node: 1
+	Coordinates  : 0 0 
+	Disps: 0 0 0 
+	Velocities   : 0 0 0 
+
+
+ Node: 2
+	Coordinates  : 10 0 
+	Disps: 0 0 0 
+	Velocities   : 0 0 0 
+
+
+ Node: 3
+	Coordinates  : 5 -5 
+	Disps: 0 0 0 
+	Velocities   : 0 0 0 
+
+ELEMENT DATA: NumEle: 2
+
+numComponents: 2
+Element: 1 type: Truss  iNode: 1 jNode: 3 Area: 0.1 Mass/Length: 0 cMass: 0 
+	 strain: 0 axial load: 0 
+	 unbalanced load: -0 0 0 0 -0 0 
+ 	 Material: 
+Element: 2 type: Truss  iNode: 3 jNode: 2 Area: 0.1 Mass/Length: 0 cMass: 0 
+	 strain: 0 axial load: 0 
+	 unbalanced load: -0 -0 0 0 0 0 
+ 	 Material: 
+
+SP_Constraints: numConstraints: 4
+
+numComponents: 4
+SP_Constraint: 0	 Node: 1 DOF: 1 ref value: 0 current value: 0 initial value: 0
+SP_Constraint: 1	 Node: 1 DOF: 2 ref value: 0 current value: 0 initial value: 0
+SP_Constraint: 2	 Node: 2 DOF: 1 ref value: 0 current value: 0 initial value: 0
+SP_Constraint: 3	 Node: 2 DOF: 2 ref value: 0 current value: 0 initial value: 0
+
+Pressure_Constraints: numConstraints: 0
+
+numComponents: 0
+
+MP_Constraints: numConstraints: 0
+
+numComponents: 0
+
+LOAD PATTERNS: numPatterns: 1
+
+
+numComponents: 1
+Load Pattern: 1
+  Scale Factor: 1
+Constant Series: factor: 1
+  Nodal Loads: 
+
+numComponents: 1
+Nodal Load: 3 load : 0 -123 0 
+
+  Elemental Loads: 
+
+numComponents: 0
+
+  Single Point Constraints: 
+
+numComponents: 0
+
+PARAMETERS: numParameters: 0
+
+
+numComponents: 0
+Current Domain Information
+	Current Time: 0
+	Committed Time: 0
+NODE DATA: NumNodes: 3
+
+numComponents: 3
+
+ Node: 1
+	Coordinates  : 0 0 
+	Disps: 0 0 0 
+	Velocities   : 0 0 0 
+
+
+ Node: 2
+	Coordinates  : 10 0 
+	Disps: 0 0 0 
+	Velocities   : 0 0 0 
+
+
+ Node: 3
+	Coordinates  : 5 -5 
+	Disps: 0 0 0 
+	Velocities   : 0 0 0 
+
+ELEMENT DATA: NumEle: 2
+
+numComponents: 2
+Element: 1 type: Truss  iNode: 1 jNode: 3 Area: 0.1 Mass/Length: 0 cMass: 0 
+	 strain: 0 axial load: 0 
+	 unbalanced load: -0 0 0 0 -0 0 
+ 	 Material: 
+Element: 2 type: Truss  iNode: 3 jNode: 2 Area: 0.1 Mass/Length: 0 cMass: 0 
+	 strain: 0 axial load: 0 
+	 unbalanced load: -0 -0 0 0 0 0 
+ 	 Material: 
+
+SP_Constraints: numConstraints: 4
+
+numComponents: 4
+SP_Constraint: 0	 Node: 1 DOF: 1 ref value: 0 current value: 0 initial value: 0
+SP_Constraint: 1	 Node: 1 DOF: 2 ref value: 0 current value: 0 initial value: 0
+SP_Constraint: 2	 Node: 2 DOF: 1 ref value: 0 current value: 0 initial value: 0
+SP_Constraint: 3	 Node: 2 DOF: 2 ref value: 0 current value: 0 initial value: 0
+
+Pressure_Constraints: numConstraints: 0
+
+numComponents: 0
+
+MP_Constraints: numConstraints: 0
+
+numComponents: 0
+
+LOAD PATTERNS: numPatterns: 1
+
+
+numComponents: 1
+Load Pattern: 1
+  Scale Factor: 1
+Constant Series: factor: 1
+  Nodal Loads: 
+
+numComponents: 1
+Nodal Load: 3 load : 0 -123 0 
+
+  Elemental Loads: 
+
+numComponents: 0
+
+  Single Point Constraints: 
+
+numComponents: 0
+
+PARAMETERS: numParameters: 0
+
+
+numComponents: 0

@@ -211,7 +211,8 @@ def tkCalib():
     # #######################################################
     btFile = tk.Button(frame1, text='Select calibration image(s) ...')
     btFile.pack()
-    edFile = tk.Text(frame1, width=40, height=2)
+    edFile = tk.Text(frame1, width=40, height=2, undo=True, 
+                     autoseparators=True, maxundo=-1)
     edFile.pack()
     #   set initial text for demonstration
     try:
@@ -255,7 +256,8 @@ def tkCalib():
     # #######################################################
     btImgSize = tk.Button(frame1, text='Image size: width height')
     btImgSize.pack()
-    edImgSize = tk.Text(frame1, width=40, height=1)
+    edImgSize = tk.Text(frame1, width=40, height=1, undo=True, 
+                        autoseparators=True, maxundo=-1)
     edImgSize.pack()
     #   set initial text for demonstration
     try:
@@ -821,7 +823,7 @@ def tkCalib():
     lbGridImgIdx = tk.Label(frame3, text='Index of chessboard photos (1-based index)')
     lbGridImgIdx.pack()
     edGridImgIdx = tk.Entry(frame3, width=10)
-    edGridImgIdx.insert(0, '1')
+    edGridImgIdx.insert(0, '1:1')
     edGridImgIdx.pack()
 
     #   set initial text for demonstration

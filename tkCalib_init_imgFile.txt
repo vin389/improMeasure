@@ -1,11 +1,2 @@
-D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_000.JPG
-D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_001.JPG
-D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_002.JPG
-D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_003.JPG
-D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_004.JPG
-D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_005.JPG
-D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_007.JPG
-D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_008.JPG
-D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_009.JPG
-D:/yuansen/ImPro/improMeasure/examples/tkCalib2_chessboard_sjcam4k/img_010.JPG
+D:/ExpDataSamples/20240600_CarletonShakeTableCeilingSystem/calibration_202505/ENVN6116_v2.JPG
 

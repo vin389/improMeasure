@@ -104,7 +104,7 @@ def rvecTvecFromRotatingCamera(rvec, tvec, rotAxis, coordSys, rotAngleInDeg):
     r44[0:3, 3] = tvec.flatten()
     r44inv = np.linalg.inv(r44)
     # calculate rotating axis in global axis
-    if coordSys.strip()[0].lower() == 'g':
+    if len(coordSys.strip()) > 0 and coordSys.strip()[0].lower() == 'g':
         rotAxis_g = np.array(rotAxis, dtype=float).reshape(3, 1)
     else:
         rotAxis_g = np.matmul(r44inv[0:3, 0:3], rotAxis.reshape(3, 1))
@@ -193,9 +193,7 @@ def rvecTvecFromR44(r44):
 
 def cameraParametersToString(imgSize, rvec, tvec, cmat, dvec):
     # generate a string that is easy to read
-    imgSize = np.array(
-        
-    ).flatten()
+    imgSize = np.array(imgSize).flatten()
     r33, jmat= cv.Rodrigues(rvec.reshape(-1))
     r44 = np.eye(4, dtype=float)
     r44[0:3,0:3] = r33
@@ -203,12 +201,12 @@ def cameraParametersToString(imgSize, rvec, tvec, cmat, dvec):
     r44inv = np.linalg.inv(r44)
     theStr = ''
     theStr += '# Image size (width, height) is (%d, %d)\n' % (imgSize[0], imgSize[1])
-    theStr += '# rvec_x = %24.16e\n' % (rvec[0])
-    theStr += '# rvec_y = %24.16e\n' % (rvec[1])
-    theStr += '# rvec_z = %24.16e\n' % (rvec[2])
-    theStr += '# tvec_x = %24.16e\n' % (tvec[0])
-    theStr += '# tvec_y = %24.16e\n' % (tvec[1])
-    theStr += '# tvec_z = %24.16e\n' % (tvec[2])
+    theStr += '# rvec_x = %24.16e\n' % (rvec.flatten()[0])
+    theStr += '# rvec_y = %24.16e\n' % (rvec.flatten()[1])
+    theStr += '# rvec_z = %24.16e\n' % (rvec.flatten()[2])
+    theStr += '# tvec_x = %24.16e\n' % (tvec.flatten()[0])
+    theStr += '# tvec_y = %24.16e\n' % (tvec.flatten()[1])
+    theStr += '# tvec_z = %24.16e\n' % (tvec.flatten()[2])
     theStr += '# r44 matrix:\n'
     for i in range(4):
         theStr += '#   %24.16e %24.16e %24.16e %24.16e\n' % \
@@ -1058,6 +1056,232 @@ def test_camera_2():
                       color='blue', alpha=0.5, ax=ax)
     plt.show()
 
+def test_Camera_gui_1():
+    # create a tk window
+    # There are 3 columns and many rows in the window.
+    # Text box named tx_cam_pos
+    #   Location: 2nd row, in the middle, height 1 line, width 20 characters.
+    #   With a label 'Camera position' at left column,
+    # Text box named tx_cam_aim
+    #   Location: 2nd row, in the middle, height 1 line, width 20 characters.
+    #   With a label 'Camera aim' at left column,
+    # Button named bt_calculate
+    #   Location: occupies two columns, the 1st and 2nd columns
+    #   Titled 'Calculate camera parameters'
+    # A label 'Camera parameters (all in 1 column)' 
+    #   Location: 3rd column (at right), occupies 1 row and 1 column
+    # A text box named tx_cam_parameters
+    #   Below the label 'Camera parameters (all in 1 column)'
+    #   Location: 3rd column (at right), occupies 10 rows and 1 column
+    #
+    # When the button bt_calculate is clicked:
+    #   the text in cam_pos is parsed to a 3x1 numpy array, cam_pos
+    #      If fails to parse, a warning message box is popped up and the function returns.
+    #   the text in cam_aim is parsed to a 3x1 numpy array, cam_aim
+    #      If fails to parse, a warning message box is popped up and the function returns.
+    #   then a Camera object is set by calling cam.setRvecTvecByPosAim(cam_pos, cam_aim)
+    #   then the camera is printed in the text box tx_cam_parameters
+    import tkinter as tk
+    from tkinter import messagebox
+    from tkinter import scrolledtext
+    from tkinter import ttk
+    import numpy as np
+    import cv2 as cv
+    import os
+    # create a tk window
+    window = tk.Tk()
+    window.title("Camera parameters")
+    window.geometry("1200x600")
+    window.resizable(False, False)
+    # create a frame
+    frame = tk.Frame(window)
+    frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+    # create a label for camera position
+    label_cam_pos = tk.Label(frame, text="Camera position:")
+    label_cam_pos.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+    # create a text box for camera position
+    tx_cam_pos = tk.Entry(frame, width=20)
+    tx_cam_pos.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
+    # create a label for camera aim
+    label_cam_aim = tk.Label(frame, text="Camera aim:")
+    label_cam_aim.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+    # create a text box for camera aim
+    tx_cam_aim = tk.Entry(frame, width=20)
+    tx_cam_aim.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
+    # create a button for calculate camera parameters
+    bt_calculate = tk.Button(frame, text="Calculate camera parameters")
+    bt_calculate.grid(row=2, column=0, columnspan=2, padx=5, pady=5, sticky=tk.W+tk.E)
+    # create a label for camera parameters
+    label_cam_parameters = tk.Label(frame, text="Camera parameters (all in 1 column):")
+    label_cam_parameters.grid(row=3, column=2, padx=5, pady=5, sticky=tk.W)
+    # create a text box for camera parameters
+    tx_cam_parameters = scrolledtext.ScrolledText(frame, width=60, height=10)
+    tx_cam_parameters.grid(row=3, column=3, padx=5, pady=5, sticky=tk.W+tk.E)
+    # create a camera object
+    cam = Camera()
+    # define a function to calculate camera parameters
+    def calculate_camera_parameters():
+        # get the camera position and aim from the text boxes
+        cam_pos_str = tx_cam_pos.get()
+        cam_aim_str = tx_cam_aim.get()
+        # parse the camera position and aim to numpy arrays
+        try:
+            cam_pos = np.fromstring(cam_pos_str, sep=' ').reshape(3, 1)
+            cam_aim = np.fromstring(cam_aim_str, sep=' ').reshape(3, 1)
+        except:
+            messagebox.showwarning("Warning", "Invalid camera position or aim.")
+            return
+        # set the camera parameters
+        cam.setRvecTvecByPosAim(cam_pos, cam_aim)
+        # print the camera parameters in the text box
+        tx_cam_parameters.delete(1.0, tk.END)
+        tx_cam_parameters.insert(tk.END, str(cam))
+    #   bind the button to the function
+    bt_calculate.config(command=calculate_camera_parameters)
+    # run the main loop
+    window.mainloop()
+
+    pass
+
+
+def test_Camera_gui_2():
+    # create a tk window
+    # There are 3 columns and many rows in the window.
+    # Window title is "Camera Demo GUI"
+    # Text box named tx_img_size
+    #   Location: 2nd row, in the middle, height 1 line, width 20 characters.
+    #   With a label 'Image size (width height)' at left column,
+    # Text box named tx_cam_pos
+    #   Location: 2nd row, in the middle, height 1 line, width 20 characters.
+    #   With a label 'Camera position' at left column,
+    # Text box named tx_cam_aim
+    #   Location: 2nd row, in the middle, height 1 line, width 20 characters.
+    #   With a label 'Camera aim' at left column,
+    # Text box named tx_fov
+    #   Location: 2nd row, in the middle, height 1 line, width 20 characters.
+    #   With a label 'FOV (x y) (in degree)' at left column,
+    # Text box named tx_distortion
+    #   Location: 2nd row, in the middle, height 8 line, width 20 characters.
+    #   With a label 'Distortion (k1 k2 p1 p2 k3 k4 k5 k6)' at left column,
+    # Push button named bt_calculate
+    #   Location: occupies two columns, the 1st and 2nd columns
+    #   Titled 'Calculate camera parameters'
+    # A label 'Camera parameters (all in 1 column)'
+    #   Location: 3rd column (at right), occupies 1 row and 1 column
+    # A text box named tx_cam_parameters
+    #   Below the label 'Camera parameters (all in 1 column)'
+    #   Location: 3rd column (at right), occupies 20 rows and 1 column
+    import tkinter as tk
+    from tkinter import messagebox
+    root = tk.Tk()
+    root.title("Camera Demo GUI")
+    root.geometry("1500x800")
+    root.resizable(True, True) 
+    # Create 3 columns. Rows in each columns are independent.
+    # Grids in column 0, 1, and 2 are independent.
+    root_g1 = tk.Frame(root)
+    root_g1.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W+tk.E)
+    root_g2 = tk.Frame(root)
+    root_g2.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W+tk.E)
+    root_g3 = tk.Frame(root)
+    root_g3.grid(row=0, column=2, padx=5, pady=5, sticky=tk.W+tk.E)
+    # There are 3 columns and many rows in the window.
+    # Window title is "Camera Demo GUI"
+    # Text box named tx_img_size, default text is "1920 1080"
+    label_img_size = tk.Label(root_g1, text="Image size (width height):")
+    label_img_size.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+    tx_img_size = tk.Entry(root_g1, width=20)
+    tx_img_size.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
+    tx_img_size.insert(0, "1920 1080")
+    # Text box named tx_cam_pos
+    label_cam_pos = tk.Label(root_g1, text="Camera position:")
+    label_cam_pos.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W)
+    tx_cam_pos = tk.Entry(root_g1, width=20)
+    tx_cam_pos.grid(row=1, column=1, padx=5, pady=5, sticky=tk.W)
+    tx_cam_pos.insert(0, "0 0 0")
+    # Text box named tx_cam_aim
+    label_cam_aim = tk.Label(root_g1, text="Camera aim:")
+    label_cam_aim.grid(row=2, column=0, padx=5, pady=5, sticky=tk.W)
+    tx_cam_aim = tk.Entry(root_g1, width=20)
+    tx_cam_aim.grid(row=2, column=1, padx=5, pady=5, sticky=tk.W)
+    tx_cam_aim.insert(0, "0 100 0")
+    # Text box named tx_fov
+    label_fov = tk.Label(root_g1, text="FOV (x) (deg) (fx=fy):")
+    label_fov.grid(row=3, column=0, padx=5, pady=5, sticky=tk.W)
+    tx_fov = tk.Entry(root_g1, width=20)
+    tx_fov.grid(row=3, column=1, padx=5, pady=5, sticky=tk.W)
+    tx_fov.insert(0, "90")
+    # Text box named tx_distortion
+    label_distortion = tk.Label(root_g1, text="Distortion (k1 k2 p1 p2 k3 k4 k5 k6):")
+    label_distortion.grid(row=4, column=0, padx=5, pady=5, sticky=tk.W)
+    tx_distortion = tk.Text(root_g1, width=20)
+    tx_distortion.grid(row=4, column=1, padx=5, pady=5, sticky=tk.W)
+    tx_distortion.insert(0.0, "0.0 \n" * 7 + "0.0")
+    # Push button named bt_calculate. Event handler is "bt_calculate_click()
+    bt_calculate = tk.Button(root_g1, text="Calculate camera parameters")
+    bt_calculate.grid(row=5, column=0, columnspan=2, padx=5, pady=5, sticky=tk.W+tk.E)
+    def bt_calculate_click_gui2():
+        this_cam = Camera()
+        # parse the camera position from tx_cam_pos, convert to 3x1 float array
+        cam_pos_str = tx_cam_pos.get()
+        try: 
+            cam_pos = np.fromstring(cam_pos_str, sep=' ').reshape(3, 1).astype(float)
+        except:
+            # pop up a message box to warn the user. After user clicks OK, return to the function.
+            messagebox.showwarning("Warning", "Invalid camera position format.")
+            return
+        # parse the camera aim from tx_cam_aim, convert to 3x1 float array
+        cam_aim_str = tx_cam_aim.get()
+        try:
+            cam_aim = np.fromstring(cam_aim_str, sep=' ').reshape(3, 1).astype(float)
+        except:
+            messagebox.showwarning("Warning", "Invalid camera aim format.")
+            return
+        # set the camera position and aim
+        this_cam.setRvecTvecByPosAim(cam_pos, cam_aim)
+        # parse the image size from tx_img_size, convert to 1x2 integer array
+        img_size_str = tx_img_size.get()
+        try:
+            img_size = np.fromstring(img_size_str, sep=' ').reshape(2).astype(int)
+        except:
+            messagebox.showwarning("Warning", "Invalid image size format.")
+            return
+        # parse the fov from tx_fov, convert to float
+        fov_str = tx_fov.get()
+        try:
+            fov = float(fov_str)
+        except:
+            messagebox.showwarning("Warning", "Invalid fov format.")
+            return
+        this_cam.setCmatByImgsizeFovs(img_size, fov)
+        # set distortion
+        # parse the distortion from tx_distortion, convert to 1x8 float array
+        distortion_str = tx_distortion.get("1.0", tk.END)
+        try:
+            distortion = np.fromstring(distortion_str, sep=' ').reshape(-1, 1).astype(float)
+        except:
+            messagebox.showwarning("Warning", "Invalid distortion format.")
+            return
+        # set the distortion to the camera object
+        this_cam.dvec = distortion
+        # print camera information to tx_cam_parameters
+        tx_cam_parameters.delete(1.0, tk.END)
+        tx_cam_parameters.insert(tk.END, str(this_cam))
+        pass
+    bt_calculate.config(command=bt_calculate_click_gui2)
+    # A label 'Camera parameters (all in 1 column)'
+    label_cam_parameters = tk.Label(root_g2, text="Camera parameters (all in 1 column):")
+    label_cam_parameters.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
+    tx_cam_parameters = tk.Text(root_g2, width=120, height=40)
+    tx_cam_parameters.grid(row=1, column=0, padx=5, pady=5, sticky=tk.W+tk.E)
     
+    # 
+    root.mainloop()
+    pass
+
 if __name__ == '__main__':
-    test_camera_2()
+#    test_camera_2()
+#    test_Camera_gui_1()
+    test_Camera_gui_2()
+
+    pass
