@@ -1,0 +1,10 @@
+D:\yuansen\ImPro\improMeasure\tests\tests_dir_mss0\
+
+Write a tkinter GUI part of code. This is a program with Tkinter GUI.
+In GUI window, use grid for layout.
+In grid row 0, at left side, there is a button titled 'Working directory ...', 
+and is named bt_workDir, 
+right side is a text entry, named tx_workDir, that allows user to key-in. 
+If user clicks button bt_workDir, a tk file dialog pops up for user to select a directory.
+If user does not cancel the file dialog, the selected directory path is displayed at tx_workDir. 
+If mouse hovers over tx_workDir, a tooltip is temporarily displayed, with text of "Select working directory or enter it here"

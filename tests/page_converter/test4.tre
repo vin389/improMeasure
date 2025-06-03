@@ -1,0 +1,9 @@
+PAGE
+    Toplevel: Toplevel 0
+        Entry: ed_cel   bind: <<SetBalloon>> to {set ::vTcl::balloon::%W {Enter temperature in Celsius here.}} bind: <KeyRelease> to {lambda e: on_key_cel(e, self)}
+        Text: ed_fah   bind: <<SetBalloon>> to {set ::vTcl::balloon::%W {Enter temperature in Fahrenheit here.}} bind: <ButtonRelease-1> to {lambda e: on_key_fah(e, self)}
+        Label: Label2  
+        Label: Label1  
+        Button: bt_clear   bind: <ButtonRelease-1> to {lambda e: on_click_clear(e, self)}
+        Button: bt_example  
+

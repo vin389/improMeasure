@@ -1,0 +1,8 @@
+# This is the test of hash mark,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+# This is the test of hash mark,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+camera_name,image_width,image_height,rvec_x,rvec_y,rvec_z,tvec_x,tvec_y,tvec_z,cmat_11,cmat_12,cmat_13,cmat_21,cmat_22,cmat_23,cmat_31,cmat_32,cmat_33,dvec_k1,dvec_k2,dvec_p1,dvec_p2,dvec_k3,dvec_k4,dvec_k5,dvec_k6,dvec_s1,dvec_s2,dvec_s3,dvec_s4,dvec_taux,dvec_tauy
+cam1,1920,1080,1.2092,1.2092,-1.2092,0,0,3,960,0,959.5,0,960,539.5,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+# This is the test of hash mark,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+cam2,1920,1080,0,2.221441,-2.221441,0,0,3,960,0,959.5,0,960,539.5,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+cam3,1920,1080,1.2092,-1.2092,1.2092,0,0,3,960,0,959.5,0,960,539.5,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+cam4,1920,1080,1.570796,0,0,0,0,3,960,0,959.5,0,960,539.5,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0
