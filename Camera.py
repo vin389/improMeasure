@@ -896,7 +896,7 @@ class Camera:
         # fovs: [fov of x, fov of y] in degree 
         # pp: the principal point [cx, cy] in pixel, 
         #     default (None) is at center.
-        w = imgSize[0]; h = imgSize[1]
+        w = int(imgSize[0]+.5); h = int(imgSize[1]+.5)
         if np.array(fovs).size == 1: # if fovs is a scalar 
             fx = .5*w / np.tan(.5*fovs*np.pi/180.)
             fy = fx
@@ -907,6 +907,7 @@ class Camera:
             pp = (np.array(imgSize)-1.) / 2.
         cx = pp[0]; cy = pp[1]; 
         self.cmat = np.array([fx,0,cx,0,fy,cy,0,0,1.]).reshape(3,3)
+        self.imgSize = (w, h)
     
     def rotateCamera(self, rotAxis, coordSys, rotAngleInDeg):
         """

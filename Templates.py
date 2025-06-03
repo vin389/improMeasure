@@ -6,15 +6,24 @@ import os, sys, time, math, copy
 # It is used to load, save, and manipulate the templates. 
 # Each template is represented by its position in image coordinates (xi and yi), the 
 # upper left corner of the template (x0 and y0), and its width and height (width and height).
-# There are 6 columns in the template data: xi, yi, x0, y0, width, and height.
+# There are 8 columns in the template data: name (string), id (int), xi, yi, x0, y0, width, and height.
+# The name is a string, the id is an integer. 
 # The x0, y0, width, and height are supposed to be integers, while xi and yi are floats.
 # The class provides methods to load templates from a CSV file, save templates to a CSV file,
 # and to create a template from a given image. 
 # The class also provides methods to display the templates and to pick points on the templates. 
 # The class is designed to be used with the OpenCV library for image processing. 
 # The class functions include:
-#    - constructor: Given number of templates (n_templates) it initializes the template data 
+#    - __init__ (constructor): Given number of templates (n_templates) it initializes the template data 
 #                   by creating a numpy array of shape (n_templates, 6) filled with NaN values.
+#
+#    - reset_demo(): 
+#        Reset the template data to a demonstration data. 
+#
+#    - __repr__():
+#        Returns a string representation of the template data.
+#        The string is in CSV format and can be directly printed to a CSV file.
+#
 #    - num_templates(): 
 #        Returns the number of templates.
 #    
@@ -72,8 +81,6 @@ import os, sys, time, math, copy
 #        The format is:
 #        # Template data. The first line is the header and will be ignored.
 #        # The data format is xi, yi, x0, y0, width, height
-
-
 
 class Templates:
     # constructor. Given number of templates (n_templates) it initializes the template data.
