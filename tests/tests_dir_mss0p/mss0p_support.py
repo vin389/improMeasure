@@ -54,8 +54,8 @@ def on_click_work_dir_(*args):
         print(f"Selected work directory: {selected_dir}")
     else:
         print("No directory selected.")
-    # trigger on_key_tx_work_dir to check if the directory exists
-    on_key_tx_work_dir(*args)  # Call the function to check if the directory exists
+    # trigger on_key_work_dir to check if the directory exists
+    on_key_work_dir(*args)  # Call the function to check if the directory exists
     # end of on_click_bt_work_dir()
 
 
@@ -63,12 +63,12 @@ def on_key_work_dir(*args):
     # This function is called when a key is pressed in the "Work Directory" Entry widget.
     # Get work_dir from the Entry widget (args[1].tx_work_dir)
     if _debug:
-        print('mss0p_support.on_key_tx_work_dir')
+        print('mss0p_support.on_key_work_dir')
         for arg in args:
             print ('    another arg:', arg)
         sys.stdout.flush()
     if len(args) < 2:
-        print("# Error: on_key_tx_work_dir requires an Entry widget as the second argument.")
+        print("# Error: on_key_work_dir requires an Entry widget as the second argument.")
         return
     entry_widget = args[1].tx_work_dir
     work_dir = entry_widget.get()  # Get the current text from the Entry widget
@@ -80,7 +80,7 @@ def on_key_work_dir(*args):
         entry_widget.config(fg='blue')  # Set text color to blue
     else:
         entry_widget.config(fg='red')  # Set text color to red 
-    # end of on_key_tx_work_dir()
+    # end of on_key_work_dir()
 
 def on_click_clear_output(*args):
     # This function is called when the "Clear Output" button is clicked.
@@ -101,17 +101,24 @@ def on_click_clear_output(*args):
 def on_click_load(e, self):
     from mss0p_load_project_file import load_project_file 
     # This function is called when the "Load" button is clicked.
-    [self.basic_info, self.camera_parameters, self.pois_definition, self.image_sources]= \
-        load_project_file(project_file_path=None)  
+    [basic_info, camera_parameters, pois_definition, image_sources]= \
+        load_project_file(project_file_path=None, print_widget=self.tx_output)  
+    # If the project file is loaded successfully, it updates the attributes of the self object.
+    # If user cancels the file dialog, returns will be None for all variables.
+    if not basic_info is None:
+       self.basic_info = basic_info
+    if not camera_parameters is None:
+       self.camera_parameters = camera_parameters
+    if not pois_definition is None:
+       self.pois_definition = pois_definition
+    if not image_sources is None:
+       self.image_sources = image_sources
     # end of on_click_load()
 
 def on_click_save(*args):
     pass
 
-def on_click_print_info(*args):
-    # This function is called when the "Print Info" button is clicked.
-    e = args[0]
-    self = args[1] 
+def on_click_print_info(e, self):
     # This function is called when the "Print Info" button is clicked.
     # It prints the basic information of the project to the Text widget.
     if _debug:

@@ -1,0 +1,7 @@
+camera_3/image003.jpg
+camera_3/image004.jpg
+camera_3/image005.jpg
+camera_3/image006.jpg
+camera_3/image007.jpg
+camera_3/image008.jpg
+camera_3/image009.jpg
