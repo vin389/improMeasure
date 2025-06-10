@@ -237,6 +237,8 @@ def imshow3(winname, img, winmax=(1280, 720), interp=cv.INTER_CUBIC):
     # create image window    
     cv.namedWindow(winname)
     cv.setMouseCallback(winname, on_mouse)
+    # create a dictionary for template storage
+    poi_definition = {} 
     # the main look of imshow3
     while True:
         # update (zoom and resize) image
@@ -278,20 +280,45 @@ def imshow3(winname, img, winmax=(1280, 720), interp=cv.INTER_CUBIC):
                 continue
             # roi is a tuple (x, y, w, h)
             scaled_x0_roi, scaled_y0_roi, scaled_w_roi, scaled_h_roi = roi
+            x0_roi = x0 + scaled_x0_roi / scale 
+            y0_roi = y0 + scaled_y0_roi / scale 
+            w_roi = scaled_w_roi / scale 
+            h_roi = scaled_h_roi / scale 
+            xi = x0_roi + w_roi / 2 
+            yi = y0_roi + h_roi / 2 
+            print("# Selected POI at (%.2f, %.2f) with template size (%d, %d)" % (xi, yi, w_roi, h_roi))
+            # ask user to select a template for the POI 
+            roi = cv.selectROI(winname, imgScaled, fromCenter=False, showCrosshair=False)
+            scaled_x0_roi, scaled_y0_roi, scaled_w_roi, scaled_h_roi = roi
             x0_roi = int(x0 + scaled_x0_roi / scale + 0.5)
             y0_roi = int(y0 + scaled_y0_roi / scale + 0.5)
-            w_roi = int(scaled_w_roi / scale + 0.5)
-            h_roi = int(scaled_h_roi / scale + 0.5)
-            xi = x0_roi + w_roi / 2 + 0.5
-            yi = y0_roi + h_roi / 2 + 0.5
-            print("# Selected POI at (%.2f, %.2f) with template size (%d, %d)" % (xi, yi, w_roi, h_roi))
-
+            w_roi = int(scaled_w_roi / scale) 
+            h_roi = int(scaled_h_roi / scale)
+            # ask user to input a name for the POI through a tkinter input dialog
+            import tkinter as tk
+            from tkinter import simpledialog
+            root = tk.Tk()
+            root.withdraw()  # Hide the root window
+            poi_name = simpledialog.askstring("Input POI Name", "Enter a name for the POI: (empty name to skip this POI)")
+            if poi_name is None or poi_name.strip() == "":
+                print("# This POI is ignored.")
+            else:
+                poi_definition[poi_name] = {}
+                poi_definition[poi_name]['Xi'] = [xi, yi]
+                poi_definition[poi_name]['Tmplt'] = [x0_roi, y0_roi, w_roi, h_roi]
+            print("# POI definition: (%f, %f), (%d,%d,%d,%d)" % (poi_definition[poi_name]['Xi'][0],
+                  poi_definition[poi_name]['Xi'][1],  poi_definition[poi_name]['Tmplt'][0],
+                  poi_definition[poi_name]['Tmplt'][1], poi_definition[poi_name]['Tmplt'][2],
+                  poi_definition[poi_name]['Tmplt'][3]))
+            cv.destroyWindow(winname)
+            cv.namedWindow(winname)
+            cv.setMouseCallback(winname, on_mouse)
 
     try:
         cv.destroyWindow(winname)
     except:
-        return
-
+        pass
+    return poi_definition
 
 def test_imshow3():
     image_path = r'c:/temp/example02.jpg'
@@ -347,8 +374,9 @@ if __name__ == "__main__":
     winname = "TEST IMSHOW3"
 
 #    test_imshow3()
-    imshow3(winname, img, winmax=winmax, interp=cv.INTER_NEAREST)
+    pois_definition = imshow3(winname, img, winmax=winmax, interp=cv.INTER_NEAREST)
     print("# imshow3 finished.")
+    print(pois_definition)
 
 
 
