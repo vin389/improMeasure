@@ -9,6 +9,7 @@ import sys
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter.constants import *
+from datetime import datetime
 
 import mss0p
 
@@ -115,8 +116,28 @@ def on_click_load(e, self):
        self.image_sources = image_sources
     # end of on_click_load()
 
-def on_click_save(*args):
-    pass
+def on_click_save(e, self):
+    from mss0p_save_project_file import save_project_file 
+    # This function is called when the "Save" button is clicked.
+    basic_info = self.basic_info if hasattr(self, 'basic_info') else None
+    camera_parameters = self.camera_parameters if hasattr(self, 'camera_parameters') else None
+    pois_definition = self.pois_definition if hasattr(self, 'pois_definition') else None
+    image_sources = self.image_sources if hasattr(self, 'image_sources') else None
+    saved_project_file_path = save_project_file(basic_info=basic_info,
+                                                camera_parameters=camera_parameters, 
+                                                pois_definition=pois_definition,
+                                                image_sources=image_sources,
+                                                project_file_path=None,
+                                                print_widget=self.tx_output)
+    # If the project file is saved successfully, it updates the attributes of the self object.
+    if not saved_project_file_path is None:
+        self.project_file_path = saved_project_file_path
+        self.tx_output.insert("end", f"# {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.\n")
+        self.tx_output.insert(tk.END, f"Project file saved to: {saved_project_file_path}\n")
+    else:
+        self.tx_output.insert(tk.END, "Project file not saved.\n")
+    # end of on_click_save()
+    return 
 
 def on_click_print_info(e, self):
     # This function is called when the "Print Info" button is clicked.
