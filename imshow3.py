@@ -18,8 +18,8 @@ def imshow3(winname, img, winmax=(1280, 720), interp=cv.INTER_CUBIC):
     and its template (a small region of interest) (by using cv2.selectROI, and 
     the template is at the center of the selectROI). The POI name is asked
     through a tkinter input dialog for a string. The POI and its template are
-    stored in a dictionary poi_definition, which looks like this:
-    poi_definition = {
+    stored in a dictionary pois_definition, which looks like this:
+    pois_definition = {
         'poi_name_1': {'Xi':[xi, yi], 'Tmplt': [x0, y0, w, h]}, 
         ...
     }
@@ -238,7 +238,7 @@ def imshow3(winname, img, winmax=(1280, 720), interp=cv.INTER_CUBIC):
     cv.namedWindow(winname)
     cv.setMouseCallback(winname, on_mouse)
     # create a dictionary for template storage
-    poi_definition = {} 
+    pois_definition = {} 
     # the main look of imshow3
     while True:
         # update (zoom and resize) image
@@ -256,7 +256,7 @@ def imshow3(winname, img, winmax=(1280, 720), interp=cv.INTER_CUBIC):
             # update 
             x0_, y0_, x1_, y1_ = x0, y0, x1, y1
         if (mxi != mxi_ or myi != myi_) and mflags & cv.EVENT_FLAG_CTRLKEY != 0:
-            print("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bX:%.1f Y:%.1f Scale:%.1f " % (mxi, myi, scale), end='')            
+            print("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\bX:%.2f Y:%.2f Scale:%.2f " % (mxi, myi, scale), end='')            
         if (mxi != mxi_ or myi != myi_) and mflags & cv.EVENT_FLAG_ALTKEY != 0:
             showStr = "X:%.1f Y:%.1f Scale:%.1f " % (mxi, myi, scale)
             font = cv.FONT_HERSHEY_SIMPLEX
@@ -303,13 +303,13 @@ def imshow3(winname, img, winmax=(1280, 720), interp=cv.INTER_CUBIC):
             if poi_name is None or poi_name.strip() == "":
                 print("# This POI is ignored.")
             else:
-                poi_definition[poi_name] = {}
-                poi_definition[poi_name]['Xi'] = [xi, yi]
-                poi_definition[poi_name]['Tmplt'] = [x0_roi, y0_roi, w_roi, h_roi]
-            print("# POI definition: (%f, %f), (%d,%d,%d,%d)" % (poi_definition[poi_name]['Xi'][0],
-                  poi_definition[poi_name]['Xi'][1],  poi_definition[poi_name]['Tmplt'][0],
-                  poi_definition[poi_name]['Tmplt'][1], poi_definition[poi_name]['Tmplt'][2],
-                  poi_definition[poi_name]['Tmplt'][3]))
+                pois_definition[poi_name] = {}
+                pois_definition[poi_name]['Xi'] = [xi, yi]
+                pois_definition[poi_name]['Tmplt'] = [x0_roi, y0_roi, w_roi, h_roi]
+            print("# POI definition: (%f, %f), (%d,%d,%d,%d)" % (pois_definition[poi_name]['Xi'][0],
+                  pois_definition[poi_name]['Xi'][1],  pois_definition[poi_name]['Tmplt'][0],
+                  pois_definition[poi_name]['Tmplt'][1], pois_definition[poi_name]['Tmplt'][2],
+                  pois_definition[poi_name]['Tmplt'][3]))
             cv.destroyWindow(winname)
             cv.namedWindow(winname)
             cv.setMouseCallback(winname, on_mouse)
@@ -318,7 +318,7 @@ def imshow3(winname, img, winmax=(1280, 720), interp=cv.INTER_CUBIC):
         cv.destroyWindow(winname)
     except:
         pass
-    return poi_definition
+    return pois_definition
 
 def test_imshow3():
     image_path = r'c:/temp/example02.jpg'

@@ -122,22 +122,44 @@ from datetime import datetime
 #  | pois_definition     | 
 #
 #  It transforms to a dictionary like this:
+# The data format of pois_definition dictionary is:
 #  pois_definition = {
 #      'poi_name_1': {
-#          'Xw': np.array([1.0, 2.0, 3.0]),  # world coordinates of the poi
+#          'Xw': (1.0, 2.0, 3.0),  # world coordinates of the poi
 #          'Xi': {
-#              'camera_name_1': np.array([100.0, 200.0]),  # image coordinates of the poi in camera 1
-#              'camera_name_2': np.array([150.0, 250.0]),  # image coordinates of the poi in camera 2
+#              'camera_name_1': (100.0, 200.0),  # image coordinates of the poi in camera 1
+#              'camera_name_2': (150.0, 250.0),  # image coordinates of the poi in camera 2
 #          },
 #          'Tmplt': {
-#              'camera_name_1': np.array([50, 50, 100, 100], dtype=np.int32),  # template in camera 1
-#              'camera_name_2': np.array([60, 60, 120, 120], dtype=np.int32),  # template in camera 2
+#              'camera_name_1': (50, 50, 100, 100),  # template in camera 1
+#              'camera_name_2': (60, 60, 120, 120),  # template in camera 2
 #          }
-#      },
+#      }
+#      'poi_name_2': {
+#          'Xw': (4.0, 5.0, 6.0),  # world coordinates of the poi
+#          'Xi': {
+#              'camera_name_1': (110.0, 210.0),  # image coordinates of the poi in camera 1
+#              'camera_name_2': (160.0, 260.0),  # image coordinates of the poi in camera 2
+#          },
+#          'Tmplt': {
+#              'camera_name_1': (60, 60, 120, 120),  # template in camera 1
+#              'camera_name_2': (70, 70, 140, 140),  # template in camera 2
+#          }
+#      }
+#  }
+#  where 'poi_name_1' and 'poi_name_2' are the names of the points of interest (POIs), 
+#  and can be changed to any string.
+#  where 'camera_name_1' and 'camera_name_2' are the names of the cameras,
+#  and can be changed to any string.
+#  where 'Xw' is the world coordinates of the POI,
+#  'Xi' is a dictionary of image coordinates of the POI in different cameras,
+#  and 'Tmplt' is a dictionary of templates (a small region of interest, ROI of the template)
+#  in different cameras.
+#  The words 'Xw', 'Xi', and 'Tmplt' are fixed and should not be changed.
 #  For example:
-#    xw = pois_definition['poi_name_1']['Xw']  # a 3-element array
-#    xi = pois_definition['poi_name_1']['Xi']['camera_name_1']  # a 2-element array
-#    tmplt = pois_definition['poi_name_1']['Tmplt']['camera_name_1']  # a 4-element integer array (x0, y0, w, h)
+#    xw = pois_definition['poi_name_1']['Xw']  # a 3-element tuple
+#    xi = pois_definition['poi_name_1']['Xi']['camera_name_1']  # a 2-element tuple
+#    tmplt = pois_definition['poi_name_1']['Tmplt']['camera_name_1']  # a 4-element integer tuple (x0, y0, w, h)
 # 
 #
 # Worksheet "image_sources"
