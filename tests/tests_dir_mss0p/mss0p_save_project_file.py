@@ -126,7 +126,7 @@ from datetime import datetime
 #              'camera_name_1': (100.0, 200.0),  # image coordinates of the poi in camera 1
 #              'camera_name_2': (150.0, 250.0),  # image coordinates of the poi in camera 2
 #          },
-#          'Tmplt': {
+#          'Xir': {
 #              'camera_name_1': (50, 50, 100, 100),  # template in camera 1
 #              'camera_name_2': (60, 60, 120, 120),  # template in camera 2
 #          }
@@ -137,7 +137,7 @@ from datetime import datetime
 #              'camera_name_1': (110.0, 210.0),  # image coordinates of the poi in camera 1
 #              'camera_name_2': (160.0, 260.0),  # image coordinates of the poi in camera 2
 #          },
-#          'Tmplt': {
+#          'Xir': {
 #              'camera_name_1': (60, 60, 120, 120),  # template in camera 1
 #              'camera_name_2': (70, 70, 140, 140),  # template in camera 2
 #          }
@@ -149,9 +149,9 @@ from datetime import datetime
 #  and can be changed to any string.
 #  where 'Xw' is the world coordinates of the POI,
 #  'Xi' is a dictionary of image coordinates of the POI in different cameras,
-#  and 'Tmplt' is a dictionary of templates (a small region of interest, ROI of the template)
+#  and 'Xir' is a dictionary of templates (a small region of interest, ROI of the template)
 #  in different cameras.
-#  The words 'Xw', 'Xi', and 'Tmplt' are fixed and should not be changed.
+#  The words 'Xw', 'Xi', and 'Xir' are fixed and should not be changed.
 # 
 #  # Worksheet "image_sources"
 #  The image_sources dictionary looks like this:
@@ -326,8 +326,14 @@ def save_project_file(basic_info=None, camera_parameters=None, pois_definition=N
             row = [poi_name, poi_data['Xw'][0], poi_data['Xw'][1], poi_data['Xw'][2]]
             for camera_name in camera_names:
                 if camera_name in poi_data['Xi']:
-                    xi = poi_data['Xi'][camera_name]
-                    x0 = poi_data['Tmplt'][camera_name]
+                    try:
+                        xi = poi_data['Xi'][camera_name]
+                    except:
+                        xi = np.array([np.nan, np.nan], dtype=float)
+                    try:
+                        x0 = poi_data['Xir'][camera_name]
+                    except:
+                        x0 = np.array([np.nan, np.nan, np.nan, np.nan], dtype=float)
                     row.extend([xi[0], xi[1], x0[0], x0[1], x0[2], x0[3]])
                 else:
                     row.extend(['', '', '', '', '', ''])

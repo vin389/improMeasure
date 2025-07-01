@@ -1,0 +1,63 @@
+mss0p_support.on_click_bt_work_dir
+    another arg: <ButtonPress event num=1 x=122 y=13>
+    another arg: <mss0p.Mss0p object at 0x000002DDE3D4B3E0>
+No directory selected.
+mss0p_support.on_key_work_dir
+    another arg: <ButtonPress event num=1 x=122 y=13>
+    another arg: <mss0p.Mss0p object at 0x000002DDE3D4B3E0>
+mss0p_support.on_click_bt_work_dir
+    another arg: <ButtonPress event num=1 x=119 y=15>
+    another arg: <mss0p.Mss0p object at 0x000002DDE3D4B3E0>
+No directory selected.
+mss0p_support.on_key_work_dir
+    another arg: <ButtonPress event num=1 x=119 y=15>
+    another arg: <mss0p.Mss0p object at 0x000002DDE3D4B3E0>
+mss0p_support.on_click_bt_work_dir
+    another arg: <ButtonPress event num=1 x=119 y=16>
+    another arg: <mss0p.Mss0p object at 0x000002DDE3D4B3E0>
+No directory selected.
+mss0p_support.on_key_work_dir
+    another arg: <ButtonPress event num=1 x=119 y=16>
+    another arg: <mss0p.Mss0p object at 0x000002DDE3D4B3E0>
+mss0p_support.on_click_bt_work_dir
+    another arg: <ButtonPress event num=1 x=119 y=16>
+    another arg: <mss0p.Mss0p object at 0x000002DDE3D4B3E0>
+Selected work directory: D:/yuansen/ImPro/improMeasure/tests/tests_dir_mss0p/camera_3
+mss0p_support.on_key_work_dir
+    another arg: <ButtonPress event num=1 x=119 y=16>
+    another arg: <mss0p.Mss0p object at 0x000002DDE3D4B3E0>
+mss0p_support.on_click_bt_work_dir
+    another arg: <ButtonPress event num=1 x=124 y=11>
+    another arg: <mss0p.Mss0p object at 0x000002DDE3D4B3E0>
+Selected work directory: D:/yuansen/ImPro/improMeasure/tests/tests_dir_mss0p
+mss0p_support.on_key_work_dir
+    another arg: <ButtonPress event num=1 x=124 y=11>
+    another arg: <mss0p.Mss0p object at 0x000002DDE3D4B3E0>
+invalid command name "3152059054272show"
+    while executing
+"3152059054272show"
+    ("after" script)
+invalid command name "3152189088704show"
+    while executing
+"3152189088704show"
+    ("after" script)
+invalid command name "3152189089408show"
+    while executing
+"3152189089408show"
+    ("after" script)
+invalid command name "3152189089664show"
+    while executing
+"3152189089664show"
+    ("after" script)
+invalid command name "3152189089920show"
+    while executing
+"3152189089920show"
+    ("after" script)
+invalid command name "3152189090112show"
+    while executing
+"3152189090112show"
+    ("after" script)
+invalid command name "3152189090304show"
+    while executing
+"3152189090304show"
+    ("after" script)

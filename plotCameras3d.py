@@ -39,7 +39,7 @@ def plotCameras3d(imgSizes, rvecs, tvecs, cameraMats, distCoeffs, objPoints=None
         and objPoints.shape[0] > 0 and objPoints.shape[1] == 3:
         for i in range(objPoints.shape[0]):
             allVertices.append(objPoints[i])
-    if nPoints > 0:
+    if nCameras > 0:
         for i in range(nCameras):
             # get the camera position and direction
             imgSize = imgSizes[i]

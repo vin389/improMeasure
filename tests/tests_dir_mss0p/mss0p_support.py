@@ -59,7 +59,8 @@ def on_click_work_dir_(*args):
     on_key_work_dir(*args)  # Call the function to check if the directory exists
     # end of on_click_bt_work_dir()
 
-
+# This function is called when a key is pressed in the "Working Directory ..." Entry widget.
+# It checks if the directory exists and changes the text color accordingly.
 def on_key_work_dir(*args):
     # This function is called when a key is pressed in the "Work Directory" Entry widget.
     # Get work_dir from the Entry widget (args[1].tx_work_dir)
@@ -79,8 +80,15 @@ def on_key_work_dir(*args):
     import os
     if os.path.isdir(work_dir):
         entry_widget.config(fg='blue')  # Set text color to blue
+        # print date/time and a message to the output Text widget (args[1].tx_output)
+        if hasattr(args[1], 'tx_output'):
+            args[1].tx_output.insert(tk.END, f"# {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. ")
+            args[1].tx_output.insert(tk.END, f"Set working directory (work_dir) to {work_dir} and it exists.\n")
     else:
         entry_widget.config(fg='red')  # Set text color to red 
+        if hasattr(args[1], 'tx_output'):
+            args[1].tx_output.insert(tk.END, f"# {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. ")
+            args[1].tx_output.insert(tk.END, f"Set working directory (work_dir) to {work_dir} and it does not exist.\n")
     # end of on_key_work_dir()
 
 def on_click_clear_output(*args):
@@ -99,11 +107,37 @@ def on_click_clear_output(*args):
     text_widget.delete(1.0, tk.END)  # Clear all text in the Text widget
     # end of on_click_clear_output()
 
+# This function is called when the "Load ..." button is clicked.
 def on_click_load(e, self):
     from mss0p_load_project_file import load_project_file 
     # This function is called when the "Load" button is clicked.
+            # if project_file_path is not provided, pops up a tk file dialog to ask user to select the project file (an xlsx file)
+    import tkinter as tk
+    from tkinter import filedialog
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+    filetypes = [("Excel files", "*.xlsx"), ("All files", "*.*")]
+    # get working directory from the Entry widget (self.tx_work_dir)
+    work_dir = self.tx_work_dir.get() if hasattr(self, 'tx_work_dir') else ''
+    # set work_dir as a initial directory for the file dialog if work_dir is not empty
+    if work_dir:
+        # If work_dir is not empty, set it as the initial directory for the file dialog.
+        # This allows the user to select a project file from the specified working directory.
+        filetypes.insert(0, ("All files", "*.*"))
+        filedialog.initialdir = work_dir
+    project_file_path = filedialog.askopenfilename(
+        title="Select a project file",
+        filetypes=filetypes
+    )
+    if project_file_path == "":
+        # If user cancels the file dialog, return None for all variables.
+        # If no project file is selected, it prints date/time and a message to the output Text widget.
+        self.tx_output.insert(tk.END, f"# {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. ")
+        self.tx_output.insert(tk.END, "# No project file selected.\n")
+        return
+    # 
     [basic_info, camera_parameters, pois_definition, image_sources]= \
-        load_project_file(project_file_path=None, print_widget=self.tx_output)  
+        load_project_file(project_file_path, print_widget=self.tx_output)  
     # If the project file is loaded successfully, it updates the attributes of the self object.
     # If user cancels the file dialog, returns will be None for all variables.
     if not basic_info is None:
@@ -114,8 +148,18 @@ def on_click_load(e, self):
        self.pois_definition = pois_definition
     if not image_sources is None:
        self.image_sources = image_sources
+    # if the project_file_path is not None, and the text in working directory Entry widget (self.tx_work_dir) is not empty
+    # set working directory to the directory of the project file
+    if not project_file_path is None and len(self.tx_work_dir.get()) == 0:
+        # If the project file is loaded successfully, it updates the working directory Entry widget.
+        import os
+        self.tx_work_dir.delete(0, tk.END)
+        self.tx_work_dir.insert(0, os.path.dirname(project_file_path))  # Set the working directory to the directory of the project file
+        on_key_work_dir(e, self)
+    return 
     # end of on_click_load()
 
+# This function is called when the "Save ..." button is clicked.
 def on_click_save(e, self):
     from mss0p_save_project_file import save_project_file 
     # This function is called when the "Save" button is clicked.
@@ -140,7 +184,7 @@ def on_click_save(e, self):
     return 
 
 def on_click_print_info(e, self):
-    # This function is called when the "Print Info" button is clicked.
+    # This function is called when the "Print Information" button is clicked.
     # It prints the basic information of the project to the Text widget.
     if _debug:
         print('mss0p_support.on_click_print_info')
@@ -150,17 +194,178 @@ def on_click_print_info(e, self):
     if not hasattr(self, 'tx_output'):
         print("# Error: on_click_print_info requires a Text widget named tx_output.")
         return
+    self.tx_output.insert(tk.END, f"# {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.\n")
     # Get the current values from the Entry widgets
     work_dir = self.tx_work_dir.get()
     output_text = f"Work Directory: {work_dir}\n"
     # Print the output text to the Text widget
     self.tx_output.insert(tk.END, output_text)  # Append text to the Text widget
+    # print the self.basic_info, self.camera_parameters, self.pois_definition, self.image_sources
+    from mss0p_print_info import info_to_text
+    to_print = info_to_text(self.basic_info, self.camera_parameters, 
+                        self.pois_definition, self.image_sources)
+    if to_print:
+        self.tx_output.insert(tk.END, to_print)
+    return
     # end of on_click_print_info()
 
 def on_click_select_video_sources(e, self):
     pass
 
 def on_click_pick_pois(e, self):
+    # When "Pick POIs" button is clicked.
+    # Ask user to select camera, frame number which POIs will be picked from.
+    from inputdlg2 import inputdlg2
+    title = "Select Camera and Frame Number for POIs"
+    prompts = ["Camera Name: ", "Frame Number: "]
+    # camera names in a string (e.g., "camera1 camera2 camera3") from self.image_sources
+    if hasattr(self, 'image_sources'):
+        camera_names_in_string = " ".join(self.image_sources.keys())
+    datatypes = ["listbox " + camera_names_in_string, 
+                 "int 1 999999"]
+    tooltips = ["Select a camera from the list",
+                "Enter the frame number from which POIs will be picked (first frame is 1)"]
+    result = inputdlg2(prompts, datatypes, tooltips, title)
+    # print result to the output Text widget (self.tx_output)
+    if result is None:
+        # if user clicked Cancel, print a message to the output Text widget
+        self.tx_output.insert(tk.END, "# User cancelled the input dialog.\n")
+        return
+    else:
+        # if user clicked OK, print the result to the output Text widget
+        self.tx_output.insert(tk.END, f"# User selected: {result}\n")
+        user_clicked_camera_name = result[0] if len(result) > 0 else ""
+        user_clicked_frame_number = result[1] if len(result) > 1 else 1
+        user_clicked_frame_number = int(user_clicked_frame_number) 
+        self.tx_output.insert(tk.END, f"Selected Camera: {user_clicked_camera_name}\n")
+        self.tx_output.insert(tk.END, f"Selected Frame Number: {user_clicked_frame_number}\n")
+    # if camera_name is valid, try to get the image source, get the image, store at img_to_pick
+    if user_clicked_camera_name not in self.camera_parameters:
+        self.tx_output.insert(tk.END, f"# Error: Camera '{user_clicked_camera_name}' not found in camera parameters.\n")
+        # print date/time and error message to the output Text widget
+        self.tx_output.insert(tk.END, f"# {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. ")
+        self.tx_output.insert(tk.END, f"Camera '{user_clicked_camera_name}' not found in camera parameters.\n")
+        return
+    # get the image source for the selected camera
+    image_source = self.image_sources.get(user_clicked_camera_name, None)
+    if image_source is None:
+        self.tx_output.insert(tk.END, f"# Error: Image source for camera '{user_clicked_camera_name}' not found.\n")
+        # print date/time and error message to the output Text widget
+        self.tx_output.insert(tk.END, f"# {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. ")
+        self.tx_output.insert(tk.END, f"Image source for camera '{user_clicked_camera_name}' not found.\n")
+        return
+    # If the image source is a list, it is a list of image files. Get the image file for the selected frame number.
+    if isinstance(image_source, list):
+        # if image source is a list, it is a list of image files.
+        if user_clicked_frame_number < 1 or user_clicked_frame_number > len(image_source):
+            # if the frame number is out of range, print an error message to the output Text widget
+            self.tx_output.insert(tk.END, f"# Error: Frame number {user_clicked_frame_number} is out of range for camera '{user_clicked_camera_name}'.\n")
+            # print date/time and error message to the output Text widget
+            self.tx_output.insert(tk.END, f"# {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. ")
+            self.tx_output.insert(tk.END, f"Frame number {user_clicked_frame_number} is out of range for camera '{user_clicked_camera_name}'.\n")
+            return
+        # read the image file from the list at the specified frame number
+        img_to_pick_filename = image_source[user_clicked_frame_number - 1]
+        import cv2 
+        img_to_pick = cv2.imread(img_to_pick_filename)
+        # display information about the image that is loaded
+        if img_to_pick is None:
+            self.tx_output.insert(tk.END, f"# Error: Could not load image from '{img_to_pick_filename}'.\n")
+            # print date/time and error message to the output Text widget
+            self.tx_output.insert(tk.END, f"# {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. ")
+            self.tx_output.insert(tk.END, f"Could not load image from '{img_to_pick_filename}'.\n")
+            return
+        self.tx_output.insert(tk.END, f"Image loaded from: {img_to_pick_filename}\n")
+        self.tx_output.insert(tk.END, f"Image shape: {img_to_pick.shape}\n")
+        self.tx_output.insert(tk.END, f"Image size: {img_to_pick.size}\n")
+    elif isinstance(image_source, str):
+        # if image source is a string, it is a video file.
+        # Open the video file and get the frame at the specified frame number.
+        import cv2
+        video_capture = cv2.VideoCapture(image_source)
+        # if it is not a video
+        if not video_capture.isOpened():
+            self.tx_output.insert(tk.END, f"# Error: Could not open video file '{image_source}'.\n")
+            # print date/time and error message to the output Text widget
+            self.tx_output.insert(tk.END, f"# {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. ")
+            self.tx_output.insert(tk.END, f"Could not open video file '{image_source}'.\n")
+            return
+        # Set the video capture to the specified frame number
+        # video_capture.set(cv2.CAP_PROP_POS_FRAMES, user_clicked_frame_number - 1)
+        # Because of keyframe (i-frame) and inter-frame (p-frame) encoding, we need to read frames until we reach the desired frame number.
+        video_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        # print date/time and a message to the output Text widget
+        self.tx_output.insert(tk.END, f"# {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. ")
+        self.tx_output.insert(tk.END, f"# Reading frame {user_clicked_frame_number} from video file '{image_source}'.\n")
+        # Read frames until we reach the desired frame number
+        for iframe in range(user_clicked_frame_number - 1):
+            ret, _ = video_capture.read()
+            # for every 100 frames, print a message to the output Text widget
+            if iframe % 10 == 0:
+                self.tx_output.insert(tk.END, f"#{iframe + 1} ")
+            if not ret:
+                self.tx_output.insert(tk.END, f"# Error: Could not read frame {user_clicked_frame_number} from video file '{image_source}'.\n")
+                # print date/time and error message to the output Text widget
+                self.tx_output.insert(tk.END, f"# {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. ")
+                self.tx_output.insert(tk.END, f"# Could not read frame {user_clicked_frame_number} from video file '{image_source}'.\n")
+                return
+        self.tx_output.insert(tk.END, f"# Finished reading frames from video file '{image_source}'.\n")
+        # Read the frame from the video file
+        ret, img_to_pick = video_capture.read()
+        video_capture.release()  # Release the video capture object
+        if not ret:
+            self.tx_output.insert(tk.END, f"# Error: Could not read frame {user_clicked_frame_number} from video file '{image_source}'.\n")
+            # print date/time and error message to the output Text widget
+            self.tx_output.insert(tk.END, f"# {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. ")
+            self.tx_output.insert(tk.END, f"Could not read frame {user_clicked_frame_number} from video file '{image_source}'.\n")
+            return
+        # display information about the image that is loaded
+        self.tx_output.insert(tk.END, f"Image loaded from video file: {image_source}\n")
+        self.tx_output.insert(tk.END, f"Image shape: {img_to_pick.shape}\n")
+        self.tx_output.insert(tk.END, f"Image size: {img_to_pick.size}\n")
+    else:
+        self.tx_output.insert(tk.END, f"# Error: Unsupported image source type for camera '{user_clicked_camera_name}'.\n")
+        # print date/time and error message to the output Text widget
+        self.tx_output.insert(tk.END, f"# {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. ")
+        self.tx_output.insert(tk.END, f"Unsupported image source type for camera '{user_clicked_camera_name}'.\n")
+        return
+    # Now we have img_to_pick, which is the image from which POIs will be picked.
+    from imshow3 import imshow3
+    # Display the image using imshow3
+    result = imshow3("Pick POIs", img_to_pick)
+    # if result is None, or result[0] is None, or result[0].shape is None, or result[0].shape is zero, 
+    # print date/time and a message that no POI is picked. 
+    if result is None or result[0] is None or result[0].shape is None or result[0].shape[0] == 0:
+        self.tx_output.insert(tk.END, f"# {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. ")
+        self.tx_output.insert(tk.END, "No POI picked.\n")
+        return
+    # if data is consistent, update the pois_definition with the picked POIs.
+    if result[0].shape[0] == result[1].shape[0] == len(result[2]):
+        n_picked_pois = result[0].shape[0]
+        for ipoi in range(n_picked_pois):
+            poi_name = result[2][ipoi]
+            if not hasattr(self, 'pois_definition'):
+                self.pois_definition = {}
+            if poi_name not in self.pois_definition:
+                self.pois_definition[poi_name] = {}
+            # store the picked POI coordinates in the pois_definition
+            if 'Xi' not in self.pois_definition[poi_name]:
+                self.pois_definition[poi_name]['Xi'] = {}
+            self.pois_definition[poi_name]['Xi'][user_clicked_camera_name] = result[0][ipoi]
+            # store the ROI of POI in the pois_definition
+            if 'Xir' not in self.pois_definition[poi_name]:
+                self.pois_definition[poi_name]['Xir'] = {}  
+            self.pois_definition[poi_name]['Xir'][user_clicked_camera_name] = result[1][ipoi]
+            # print date/time and a message to the output Text widget
+            self.tx_output.insert(tk.END, f"# {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. ")
+            self.tx_output.insert(tk.END, f"Picked POI '{poi_name}' with coordinates {result[0][ipoi]} and ROI {result[1][ipoi]}.\n")
+        # end of for ipoi in range(n_picked_pois)
+    # end of if result is None or result[0] is None or result[0].shape is None or result[0].shape[0] == 0
+    else:
+        # print date/time and a message that result sizes are not consistent
+        self.tx_output.insert(tk.END, f"# {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. ")
+        self.tx_output.insert(tk.END, "Error: Result sizes are not consistent (poi:%d, poir%d, names:%s)"
+                              % (result[0].shape[0], result[1].shape[0], result[2].shape[0]))
     pass
 
 def on_click_detect_aruco_pois(e, self):
