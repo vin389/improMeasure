@@ -302,7 +302,11 @@ class ImgSeq:
         update_info()
 #        root.mainloop()
         root.wait_window()
-        print("In uigetfile2(): Image sequence initialized.")
+        # return the selected paths or video file
+        if self.source_type == 'images':
+            return self.paths
+        elif self.source_type == 'video':
+            return self.video_path
         
 
 
@@ -312,8 +316,10 @@ if __name__ == '__main__':
 
     seq = ImgSeq()
 
-    seq.uigetfile2(title="Select Image Sequence (initial setting)")
+    results = seq.uigetfile2(title="Select Image Sequence (initial setting)")
+    print(results, '\n----------------------------------------')
     pass
     print("Image sequence initialized.")
     pass
     seq.uigetfile2(title="Current Image Sequence (2nd run)")
+    print(results, '\n----------------------------------------')

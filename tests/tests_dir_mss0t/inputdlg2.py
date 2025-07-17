@@ -184,8 +184,23 @@ def inputdlg2(prompts, datatypes, tooltips=None, title="Input Dialog"):
     return dlg.show()
 
 if __name__ == '__main__':
-    prompts = ['Enter age:', 'Temperature:', 'Your name:', 'Choose file:', 'Select dir:', 'Pick one:']
-    datatypes = ['int 0 99', 'float -273.15 inf', 'string', 'file', 'dir', 'listbox Apple Banana Cherry']
-    tooltips = ['Age between 0 and 99', 'Must be above absolute zero', 'Free text name', 'Choose an existing file', 'Choose an existing folder', 'Select from list']
-    result = inputdlg2(prompts, datatypes, tooltips, "Custom Input Dialog")
+    prompts = ['Enter age:', 
+               'Temperature:', 
+               'Your name:', 
+               'Choose file:', 
+               'Select dir:', 
+               'Pick one:']
+    datatypes = ['int 0 99', 
+                 'float -273.15 inf', 
+                 'string', 
+                 'file', 
+                 'dir', 
+                 'listbox Mon Tue Wed Thu Fri Sat Sun']
+    tooltips = ['Age between 0 and 99', 
+                'Temperature in Celsius (-273.15 ~ inf)', 
+                'Free text name. Spaces are allowed.', 
+                'Choose an existing file', 
+                'Choose an existing folder', 'Select from list']
+    title = "A demonstration of inputdlg2 with tooltips"
+    result = inputdlg2(prompts=prompts, datatypes=datatypes, tooltips=tooltips, title=title)
     print("Result:", result)

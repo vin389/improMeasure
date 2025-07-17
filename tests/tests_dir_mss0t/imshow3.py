@@ -4,7 +4,7 @@ from drawTemplates3 import drawTemplates3
 
 
 def imshow3(winname: str, img=np.ndarray, winmax: tuple=(1280, 720), interp:int=cv2.INTER_NEAREST_EXACT, 
-            Xi=[], Xir=[], poi_names=[]):
+            Xi=None, Xir=None, poi_names=None):
     """
     This function is an enhanced imshow2 that not only allows user to pan and zoom
     the image by mouse dragging and wheel rolling, but also allows user to pick 
@@ -38,6 +38,10 @@ def imshow3(winname: str, img=np.ndarray, winmax: tuple=(1280, 720), interp:int=
     poi_names = ['poi_name_1', 'poi_name_2', ...]
     
     Pressing 's' or 'S' will save the POIs and their templates to a csv file.
+    The csv file format is:
+        poi_name,x0,y0,w,h,xi,yi (This is the header, and the header will not vary)
+        poi_name_1,x0_1,y0_1,w_1,h_1,xi_1,yi_1
+        poi_name_2,x0_2,y0_2,w_2,h_2,xi_2,yi_2
 
     Pressing 'c' or 'C' will save the image with POIs and their templates to a file.
 
@@ -69,6 +73,18 @@ def imshow3(winname: str, img=np.ndarray, winmax: tuple=(1280, 720), interp:int=
         - poi_names: a list of strings containing the names of the POIs.
 
     """
+    # Python evaluates all default arguments only once, at function definition
+    # time. The problem only becomes visible with mutable objects.
+    # If Xi, Xir, or poi_names are not provided, initialize them as empty lists.
+    # Then Xi, Xir, and poi_names can be changed in the function. 
+    # Next time user calls imshow3, they will be the same as the last time.
+    # To prevent this from happening, we initialize them as None.
+    if Xi is None:
+        Xi = []
+    if Xir is None:
+        Xir = []
+    if poi_names is None:
+        poi_names = []
     # define x0, y0, x1, y1 as the region of image to display in imdhow window
     # x0, y0, x1, y1 are integers
     # x0 has to be between [0, x1)
@@ -320,6 +336,11 @@ def imshow3(winname: str, img=np.ndarray, winmax: tuple=(1280, 720), interp:int=
         # if "h" or "H" is pressed, pop up a help dialog (tkinter dialog)
         if ikey == ord("h") or ikey == ord("H"):
             help_string = "Help:\n  H or h: Pop this help dialog.\n"
+            help_string += "  Image resolution: %d x %d, %d-channel\n" % (img.shape[1], img.shape[0], img.shape[2] if len(img.shape) > 2 else 1)
+            help_string += "  Press Ctrl: show coordinates of the mouse cursor in the console.\n"
+            help_string += "  Press Alt: show coordinates of the mouse cursor on the image.\n"
+            help_string += "  Mouse left button: drag to pan the image.\n"
+            help_string += "  Mouse wheel: zoom in or out the image.\n"                
             help_string += "  X or x: select a POI (at the crosshair),\n"
             help_string += "     then select an ROI for the POI (the box without crosshair),\n"
             help_string += "  T or t: taggle showing templates on the image.\n"
@@ -354,7 +375,7 @@ def imshow3(winname: str, img=np.ndarray, winmax: tuple=(1280, 720), interp:int=
         #                                  then select an roi for the poi (Xir) (without crosshair)
         if ikey == ord("x") or ikey == ord("X"):
             # pop up a tk information dialog shows the basic help message
-            help_message = "You pressed T or t to select a Point of Interest (POI) and its template (POI region or Xir).\n"
+            help_message = "You pressed X or x to select a Point of Interest (POI) and its template (POI region or Xir).\n"
             help_message += "Please select a POI by dragging a rectangle with crosshair, then select a template (Xir) by dragging another rectangle without crosshair.\n"
             help_message += "The POI name will be asked through a tkinter input dialog.\n"
             help_message += "Enter an empty name or cancel the dialog to skip this POI.\n"
@@ -464,6 +485,8 @@ def imshow3(winname: str, img=np.ndarray, winmax: tuple=(1280, 720), interp:int=
             # The format is
             # poi_name, xi, yi, x0, y0, w, h
             # where (xi, yi) is the POI location, and (x0, y0, w, h) is the template rectangle
+            Xi = np.array(Xi, dtype=np.float64).reshape(-1,2)
+            Xir = np.array(Xir, dtype=np.int32).reshape(-1,4)
             if len(poi_names) == 0 or Xi.shape[0] == 0 or Xir.shape[0] == 0:
                 print("# No POIs selected. Cannot save to file.")
                 continue
@@ -500,55 +523,76 @@ def test_imshow3():
     img = cv2.imread(image_path)
     imshow3("TEST IMSHOW3", img, interp=cv2.INTER_NEAREST_EXACT)
 
+# GUI wrapper to test imshow3 using Tkinter
+def run_imshow3_gui():
+    import cv2 
+    from inputdlg3 import inputdlg3
 
-# if this script is run as a standalone script, run test_imshow3()
-if __name__ == "__main__":
-    winname = "test imshow3"
-    winmax = (1280, 720)
+    prompts = ['Window title:', 
+               'Select image file:', 
+               'Maximum window size (width height):',
+               'Interpolation method (0-5):']
+    datatypes = ['string', 
+                 'file', 
+                 'array 1 2 ',
+                 'listbox INTER_NEAREST INTER_LINEAR INTER_CUBIC INTER_AREA INTER_LANCZOS4 INTER_LINEAR_EXACT']
+    initvalues = ['imshow3 Test Window', 
+                  r'c:/temp/example02.jpg', 
+                  '1280 720',
+                  [0]]  # Default interpolation method is INTER_NEAREST
+    tooltips = ['Window title for the display whatever you want',
+                'Select an image file to display',
+                'Maximum size of the display window, e.g., 1280 720',
+                'Choose interpolation method for resizing the image']
 
-    # use tkinter file dialog to ask user to select an image file (jpg, png, bmp, etc.)
-    import tkinter as tk
-    from tkinter import filedialog
-    root = tk.Tk()
-    root.withdraw()  # Hide the root window
-    # make file dialog on top of desktop
-    root.attributes('-topmost', True)
-    image_path = filedialog.askopenfilename(title="Select an Image File",
-                                             filetypes=[("Image Files", "*.jpg;*.jpeg;*.png;*.bmp")])
-    if not image_path:
-        print("# No image file selected. Exiting.")
-        exit()
+    result = inputdlg3(prompts, datatypes, initvalues, tooltips, title="Preparation for imshow3")
 
-    img = cv2.imread(image_path)
-    if img is None:
-        print("# Error: Could not read the image file. Exiting.")
-        exit()
+    if result:
+        # winname 
+        winname = result[0]
+        if not winname:
+            winname = 'imshow3 Test Window'
+        # img
+        try:
+            img_path = result[1]
+            img = cv2.imread(img_path)
+        except:
+            img = None
+        if img is None:
+            print("Failed to load image. Please check the file path.")
+            exit(1)
+        # winmax
+        #    result[2] is a 2-by-1 numpy array. Convert it to tuple
+        try:
+            winmax = (int(result[2][0,0]), int(result[2][0,1])) 
+        except:
+            winmax = (1280, 720)
+        # interp
+        interp_index = int(result[3][0])
+        if interp_index < 0 or interp_index > 5:
+            interp_index = 0
+        interp_methods = [
+            cv2.INTER_NEAREST,
+            cv2.INTER_LINEAR,
+            cv2.INTER_CUBIC,
+            cv2.INTER_AREA,
+            cv2.INTER_LANCZOS4,
+            cv2.INTER_LINEAR_EXACT
+        ]
 
-    # call imshow3 with the image and window name
-    (poi, Xir, poi_names) = imshow3(winname, img, winmax=winmax, interp=cv2.INTER_NEAREST_EXACT)
-    print("# imshow3 finished.")
-    # if poi is not None and len(poi) >= 0 and poi is not None and poi is not empty, ... 
-    #   we re-show the image with the POIs and templates
-    if poi is None or len(poi) == 0 or Xir is None or len(Xir) == 0:
-        poi_names = None
-        print("# No POIs selected.")
-    else:
-        # convert poi and Xir to numpy arrays
-        poi = np.array(poi, dtype=np.float64)
-        Xir = np.array(Xir, dtype=np.int32)
-        if len(poi) != len(Xir) or len(poi) != len(poi_names):
-            print("# Error: POIs and templates do not match in length.")
-            poi_names = None
-        # print the result
-        for i in range(len(poi_names)):
-            print("# POI: %s at (%.2f, %.2f) with template (%d, %d, %d, %d)" % 
-                (poi_names[i], poi[i][0], poi[i][1], Xir[i][0], Xir[i][1], Xir[i][2], Xir[i][3]))
-        # draw it on images
-        #from drawTemplates3 import drawTemplates3
-        #img_with_templates = drawTemplates3(img, poi, Xir, poi_names)
-        #imshow3("POIs with regions", img_with_templates, (800, 480), cv2.INTER_NEAREST_EXACT)
+        img = cv2.imread(img_path)
+        if img is not None:
+            outputs = imshow3(
+                img=img,
+                winname=winname,
+                winmax=winmax,
+                interp=interp_index
+            )
+            print(outputs)
+        else:
+            print("Failed to load image.")
 
-
-
- 
+# main program
+if __name__ == '__main__':
+    run_imshow3_gui()
 
