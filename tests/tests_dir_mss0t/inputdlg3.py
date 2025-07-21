@@ -17,6 +17,7 @@
 #   - 'string' / 'text'    : Any single-line string input. It will append a string in returned list.
 #   - 'strings'            : Multi-line string input (returned as list of strings). I will append a list of strings in returned list.
 #   - 'file'               : Valid path to existing file (with Browse...). It will append a string in returned list.
+#   - 'filew'              : Valid path to new file (with Browse...). It will append a string in returned list.
 #   - 'files'              : Select multiple files (returned as list of paths). It will append a list of strings in returned list.
 #   - 'dir'                : Valid path to existing directory (with Browse...). It will append a string in returned list.
 #   - 'listbox item1 ...'  : User selects one from list of items. It will append a list of selected indices in returned list. E.g., [0, 2] means the first and third items are selected.
@@ -287,8 +288,9 @@ class InputDialog3:
         for i, (prompt, dtype, initvalue, tooltip) in enumerate(zip(self.prompts, self.datatypes, self.initvalues, self.tooltips)):
             label = tk.Label(frame, text=prompt)
             label.grid(row=i, column=0, sticky='w', padx=5, pady=2)
-            # make the label width fit the longest prompt
-            label.config(width=max(20, len(prompt) + 2))
+            # make the label width fit the longest prompt, and make text align left
+            label.config(anchor='w')
+            label.config(width=max(10, len(prompt) + 2))
             if tooltip:
                 self.add_tooltip(label, tooltip)
 

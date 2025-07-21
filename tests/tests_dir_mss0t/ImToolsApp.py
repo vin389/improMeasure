@@ -2,6 +2,7 @@ import tkinter as tk
 from video_to_pictures import VideoToPicturesGUI
 from pictures_to_video import PicturesToVideoGUI
 from imshow3 import imshow3, run_imshow3_gui
+from template_match_subpixels import run_gui_template_match_subpixels_image_sequence
 
 # Tooltip class
 class Tooltip:
@@ -52,19 +53,28 @@ class ImToolsApp:
         self.button_frame = tk.Frame(master)
         self.button_frame.pack(anchor='nw', padx=10, pady=10)
 
+        # Video to Pictures tool for extracting frames from a video
         self.add_tool_button(
             label="Video to Pictures", 
             command=self.launch_video_to_pictures, 
             tooltip_text="Convert frames in a video to image files."
         )
+        # Pictures to Video tool for combining images into a video
         self.add_tool_button(
             label="Pictures to Video", 
             command=self.launch_pictures_to_video, 
             tooltip_text="Combine image files into a video file."
         )
+        # Imshow3 tool for image display with zoom/pan and template picking
         self.add_tool_button(
             label="Imshow/Pick", 
             command=self.launch_imshow3, 
+            tooltip_text="Show image w/ zoom/pan and picking templates."
+        )
+        # Image sequence template match
+        self.add_tool_button(
+            label="Template match (Img seq)", 
+            command=self.run_template_match_imgseq,
             tooltip_text="Show image w/ zoom/pan and picking templates."
         )
         # add a new button here for any new tool
@@ -90,6 +100,10 @@ class ImToolsApp:
     def launch_imshow3(self):
 #        tool_window = tk.Toplevel(self.master)
         run_imshow3_gui()
+    def run_template_match_imgseq(self):
+        from template_match_subpixels import run_gui_template_match_subpixels_image_sequence
+        run_gui_template_match_subpixels_image_sequence()
+
 
 
 if __name__ == "__main__":

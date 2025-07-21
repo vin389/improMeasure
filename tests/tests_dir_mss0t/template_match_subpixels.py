@@ -535,6 +535,7 @@ def run_gui_template_match_subpixels_image_sequence():
     # 4. search_range_pixels, a scalar, 2-element list, or a NumPy array of shape (np_templates, 2)
     # 5. search_range_factors, a scalar, 2-element list, or a NumPy array of shape (np_templates, 2)
     from inputdlg3 import inputdlg3 
+    import cv2 # don't know why but i need to import cv2 again here.
     # popup a dialog by inputdlg3 
     title = "Template Match for image sequence GUI"
     prompts = [
@@ -542,28 +543,32 @@ def run_gui_template_match_subpixels_image_sequence():
         "Image Sequence (image files or a video file):",
         "Definition Templates File (csv file path):",
         "Search Range Pixels (scalar, 2-element list, or np array of shape (np_templates, 2)):",
-        "Search Range Factors (scalar, 2-element list, or np array of shape (np_templates, 2)):"
+        "Search Range Factors (scalar, 2-element list, or np array of shape (np_templates, 2)):",
+        "Tracked Points (csv file path):"
     ]
     datatypes = [
         "image",  # Initial Image
         "files",  # Image Sequence Directory
         "file",   # Initial Templates File
         "array -1 2",  # Search Range Pixels
-        "array -1 2"   # Search Range Factors
+        "array -1 2",  # Search Range Factors
+        "filew"   # Tracked Points File
     ]
     initvalues = [
         "c:/test/initial_image.jpg",  # Initial Image
         "",  # Image Sequence files
         "c:/test/templates.csv",  # Initial Templates File
         "",  # Search Range Pixels (default to 30 pixels)
-        "2.0 0.5, 2.0 0.5, 2.0 0.5"  # Search Range Factors (default to 1.0)
+        "2.0 0.5, 2.0 0.5, 2.0 0.5",  # Search Range Factors (default to 1.0)
+        "c:/test/tracked_points.csv" # Tracked Points File
     ]
     tooltips = [
         "Select the initial image file to use for template matching.\nIt can be an image, e.g., c:/a.jpg\nor a video file with frame index (1-base), e.g., c:/a.mp4 300",
         "Select image files or a video file.",
         "Select the csv file containing the initial templates (7 columns, each row has poi_names, xi, yi, x0, y0, w, h).",
         "Specify the search range in pixels as a scalar,\n  2-element list,\n  or a NumPy array of shape (np_templates, 2).",
-        "If search range in pixels are empty, you need to specify the search range factors\n  as a scalar,\n  2-element list,\n  or a NumPy array of shape (np_templates, 2)."
+        "If search range in pixels are empty, you need to specify the search range factors\n  as a scalar,\n  2-element list,\n  or a NumPy array of shape (np_templates, 2).",
+        "Select a (new) csv file to save the tracked points.\nIt will be created if it does not exist."
     ]
     # Call inputdlg3 to get user inputs
     while True:
@@ -702,7 +707,13 @@ def run_gui_template_match_subpixels_image_sequence():
             # end if vid.isOpened()
         # end if len(img_seq) == 1
 
-        # read an image from vid
+        # create an empty array to store the tracked points 
+        num_pois = init_templates.shape[0]  # Number of templates to track
+        xi_result = np.ones((num_images, init_templates.shape[0] * 3), dtype=np.float32) * np.nan # shape: (num_images, np_templates, 2)
+        xi_header = ["frame_index,"] + [f"xi_{name}, yi_{name}, tmcoeff_{name}_" for name in poi_names]
+        # Start timing the loop
+        start_time_loop = cv2.getTickCount() 
+        # read an image from vid and track
         for iframe in range(num_images):
             # for each frame in the image sequence, store the image at curr_img
             if (len(img_seq) == 1):
@@ -726,6 +737,49 @@ def run_gui_template_match_subpixels_image_sequence():
                 search_range_pixels=None,  # Use default search range pixels
                 search_range_factors=1.0
             )
+            # save result to xi_result
+            for ipoi in range(num_pois):
+                xi_result[iframe, ipoi * 3 + 0] = updated_templates[ipoi, 0]  # xi
+                xi_result[iframe, ipoi * 3 + 1] = updated_templates[ipoi, 1]  # yi
+                xi_result[iframe, ipoi * 3 + 2] = coeffs[ipoi]  # tmcoeff
+            # check current time 
+            curr_time = cv2.getTickCount()
+            # print message that the current frame is processed
+            # print frame index / total number of frames, progress percentage, elapsed time, ETA time
+            elapsed_time = (curr_time - start_time_loop) / cv2.getTickFrequency()
+            eta_time = (elapsed_time / (iframe + 1)) * (num_images - (iframe + 1))
+            progress_percentage = (iframe + 1) / num_images * 100
+            print("\b"*500, end="")  # Clear the line for better readability
+            print(f"Frame {iframe + 1}/{num_images} ({progress_percentage:.2f}%) - "
+                  f"Elapsed time: {elapsed_time:.2f}s, ETA: {eta_time:.2f}s", end="")
+
+#            print(f"Frame {iframe + 1}/{num_images}: ", end="")
+#            for ipoi in range(num_pois):
+#                print(f"{poi_names[ipoi]}: ({updated_templates[ipoi, 0]:.2f}, {updated_templates[ipoi, 1]:.2f}), "
+#                      f"tmcoeff: {coeffs[ipoi]:.4f}", end=", ")
+
+        # end of for iframe in range(num_images)
+        # save the tracked points to a csv file
+        tracked_points_file = user_inputs[5].strip()
+        # use csv module to save the tracked points (we do not use pandas because we prefer small and easy-to-maintain module)
+        import csv
+        with open(tracked_points_file, mode='w', newline='') as f:
+            writer = csv.writer(f)
+            # write the header
+            writer.writerow(xi_header)
+            # write the data
+            for iframe in range(num_images):
+                row = [iframe + 1]  # Frame index (1-based)
+                for ipoi in range(num_pois):
+                    row.append(xi_result[iframe, ipoi * 3 + 0]) 
+                    row.append(xi_result[iframe, ipoi * 3 + 1])
+                    row.append(xi_result[iframe, ipoi * 3 + 2])
+                writer.writerow(row)
+        # end of saving tracked points to a csv file
+        # print message that the tracked points are saved
+        print(f"Tracked points saved to: {tracked_points_file}. Number of frames: {num_images}. Number of templates: {num_pois}.")
+
+            
 
 
 

@@ -13,7 +13,7 @@ This script contains two tools for extracting images from video:
 
 Arguments:
 - `video_path`: Path to the input video file.
-- `frame_range`: (start, end) tuple for which frames to extract.
+- `frame_range`: (start, end) tuple for which frames to extract. (0-base, end inclusive)
 - `crop_region`: (x, y, w, h) crop rectangle.
 - `output_size`: (w, h) size to resize the cropped image.
 - `filenames`: (format_str, start_index) tuple like ('img_%05d.jpg', 0).
@@ -99,14 +99,14 @@ class VideoToPicturesGUI:
         row = 0
         tk.Label(master, text="Video file").grid(row=row, column=0, sticky='w')
         self.inputs['video_path'] = tk.StringVar()
-        tk.Entry(master, textvariable=self.inputs['video_path'], width=60).grid(row=row, column=1, sticky='w')
+        tk.Entry(master, textvariable=self.inputs['video_path'], width=100).grid(row=row, column=1, sticky='w')
         tk.Button(master, text="Browse...", command=self.browse_video).grid(row=row, column=2)
 
-        for label in ['frame_start', 'frame_end', 'crop_x', 'crop_y', 'crop_w', 'crop_h', 'resize_w', 'resize_h', 'filename_format', 'filename_start']:
+        for label in ['frame_start (0-base)', 'frame_end (end inclusive)', 'crop_x', 'crop_y', 'crop_w', 'crop_h', 'resize_w', 'resize_h', 'filename_format', 'filename_start']:
             row += 1
             tk.Label(master, text=label).grid(row=row, column=0, sticky='w')
             self.inputs[label] = tk.StringVar()
-            tk.Entry(master, textvariable=self.inputs[label], width=30).grid(row=row, column=1, sticky='w')
+            tk.Entry(master, textvariable=self.inputs[label], width=100).grid(row=row, column=1, sticky='w')
 
         self.inputs['filename_format'].set("output_%05d.jpg")
         self.inputs['filename_start'].set("0")
@@ -126,14 +126,18 @@ class VideoToPicturesGUI:
         filename = filedialog.askopenfilename(title="Select video file")
         if filename:
             self.inputs['video_path'].set(filename)
+            # if filename is 'c:/test/video.mp4', set the filename_format to 'c:/test/video_%05d.jpg'
+            filename_format = os.path.splitext(filename)[0] + "_frame_%05d.jpg"
+            self.inputs['filename_format'].set(filename_format)
+            # also set the frame_start, frame_end, crop_x, crop_y, crop_w, crop_h, resize_w, resize_h
             cap = cv2.VideoCapture(filename)
             if cap.isOpened():
                 frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
                 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                 height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                 cap.release()
-                self.inputs['frame_start'].set("0")
-                self.inputs['frame_end'].set(str(frame_count - 1))
+                self.inputs['frame_start (0-base)'].set("0")
+                self.inputs['frame_end (end inclusive)'].set(str(frame_count - 1))
                 self.inputs['crop_x'].set("0")
                 self.inputs['crop_y'].set("0")
                 self.inputs['crop_w'].set(str(width))
@@ -153,8 +157,8 @@ class VideoToPicturesGUI:
     def task(self):
         try:
             video_path = self.inputs['video_path'].get()
-            frame_start = int(self.inputs['frame_start'].get())
-            frame_end = int(self.inputs['frame_end'].get())
+            frame_start = int(self.inputs['frame_start (0-base)'].get())
+            frame_end = int(self.inputs['frame_end (end inclusive)'].get())
             crop_x = int(self.inputs['crop_x'].get())
             crop_y = int(self.inputs['crop_y'].get())
             crop_w = int(self.inputs['crop_w'].get())
@@ -179,10 +183,10 @@ class VideoToPicturesGUI:
                 status_callback=status,
                 cancel_callback=cancel
             )
-
             self.status_var.set("Done.")
         except Exception as e:
             self.status_var.set(f"Error: {e}")
+            print(f"Error: {e}")
         finally:
             self.run_button.config(state='normal')
             self.cancel_button.config(state='disabled')
