@@ -17,7 +17,7 @@ def validsOfPoints(points: np.ndarray):
            [ 4.,  3.,  2.],
            [ 5.,  3.,  5.],
            [ 4.,  3.,  2.]])
-    validsOfPoints(x) returns array([0, 1, 0, 1, 0, 1, 1, 1], dtype=uint8)
+    validsOfPoints(x) returns array([0, 1, 0, 1, 0, 1, 1, 1], dtype=np.int32)
 
     Parameters
     ----------
@@ -149,8 +149,8 @@ def countCalibPoints(points3d: np.ndarray, points2d: np.ndarray):
         validsOfPoints3d would be array([1, 1, 1, 1, 0], dtype=uint8)
         validsOfPoints2d would be array([1, 1, 0, 1, 1], dtype=uint8)
         validCalibPoints would be array([1, 1, 0, 1, 0], dtype=uint8)
-        idxAllToValid would be array([0,1,-1,2,-1], dtype=uint8)
-        idxValidToAll would be array([0,1,3], dtype=uint8)
+        idxAllToValid would be array([0,1,-1,2,-1], dtype=np.int32)
+        idxValidToAll would be array([0,1,3], dtype=np.int32)
         validPoints3d would be an N-by-3 array of valid 3d points where N is 
                       number of valid points
         validPoints2d would be an N-by-2 array of valid image points
@@ -219,8 +219,8 @@ def countCalibPoints(points3d: np.ndarray, points2d: np.ndarray):
                 nValidCalibPoints += 1
         # idxAllToValid would be array([0,1,-1,2,-1], dtype=uint8)
         # idxValidToAll would be array([0,1,3])
-        idxAllToValid = np.ones(npts2d, dtype=np.int8) * (-1)
-        idxValidToAll = np.ones(nValidCalibPoints, dtype=np.int8) * (-1)
+        idxAllToValid = np.ones(npts2d, dtype=np.int32) * (-1)
+        idxValidToAll = np.ones(nValidCalibPoints, dtype=np.int32) * (-1)
         validCount = 0
         for i in range(npts2d):
             if validCalibPoints[i] >= 1:

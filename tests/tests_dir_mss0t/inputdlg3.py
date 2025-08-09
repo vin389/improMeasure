@@ -296,11 +296,27 @@ class InputDialog3:
 
             kind, args = self.parse_datatype(dtype)
 
-            if kind == 'listbox':
-                lb = tk.Listbox(frame, height=min(5, len(args)), exportselection=False, selectmode=tk.EXTENDED)
-                for item in args:
-                    lb.insert(tk.END, item)
+            # if kind == 'listbox':
+            if len(kind) >= 7 and kind[0:7] == 'listbox':
+                # if kind is 'listbox_h10', set the listbox_height to 10
+                try:
+                    if len(kind) > 9 and kind[7:9] == '_h':
+                        listbox_height = int(kind[9:]) 
+                except:
+                    listbox_height = 5
+                # create listbox 
+                lb = tk.Listbox(frame, height=min(listbox_height, len(args)), exportselection=False, selectmode=tk.EXTENDED)
+#                for item in args:
+#                    lb.insert(tk.END, item)
+                for i_item in range(len(args)):
+                    # for listbox, each displayed item has a 1-based index before its name
+                    # e.g., if args = ['Red', 'Green'], it will display as:
+                    # (1) Red
+                    # (2) Green
+                    lb.insert(tk.END, '(%d) ' % (i_item+1) + args[i_item])
+                # the width of the listbox (lb) is the maximum length of the items
                 lb.grid(row=i, column=1, sticky='w', padx=5, pady=2)
+                lb.config(width=max(10, max(len(item) for item in args) + 5))
                 self.entries.append(lb)
                 # set initial selection if provided (e.g., initvalue = [0, 2] means select first and third items)
                 if initvalue and isinstance(initvalue, list):
@@ -383,7 +399,8 @@ class InputDialog3:
         results = []
         for entry, dtype in zip(self.entries, self.datatypes):
             kind, args = self.parse_datatype(dtype)
-            if kind == 'listbox':
+            # if kind == 'listbox'
+            if len(kind) >= 7 and kind[0:7] == 'listbox':
                 # set sels as a list of the selected index(es) in the listbox
                 # E.g., sels = [0, 2] means the first and third items are selected
                 # E.g., sels = [] means no item is selected

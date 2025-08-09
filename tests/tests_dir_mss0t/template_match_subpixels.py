@@ -53,7 +53,7 @@ Let's break down what you need to provide to the function:
           'cv2.matchTemplate' will use for matching.
         - '(w, h)': These are the integer width and height of the bounding box (template region).
 
-- 'curr_templates' (Optional):
+- 'curr_poi' (Optional):
     - Type: 'np x 2' NumPy array of 'float32', or 'None'.
     - What it is: This parameter allows you to provide an *initial guess* for the POI locations
       '[xi, yi]' in the 'curr_img'.
@@ -168,7 +168,7 @@ print("--- Case 3: Using a custom initial guess ---")
 # Let's say we expect the first point to have moved to (151.5, 152.5)
 custom_curr_guess = np.array([[151.5, 152.5]], dtype=np.float32)
 new_positions_custom_guess, coeffs_custom_guess = template_match_subpixels(
-    img1, img2, init_templates_single, curr_templates=custom_curr_guess
+    img1, img2, init_templates_single, curr_pois=custom_curr_guess
 )
 print("Updated POI (custom guess):", new_positions_custom_guess)
 print("Matching Coefficient (custom guess):", coeffs_custom_guess)
@@ -220,20 +220,20 @@ print("-" * 40)
 import numpy as np
 import cv2
 
-def template_match_subpixels(init_img, 
-                             curr_img, 
-                             init_templates,
-                             curr_templates=None, 
-                             search_range_pixels=None, 
-                             search_range_factors=1.0):
+def template_match_subpixels(init_img, # initial image which POIs are defined from
+                             curr_img, # current image where POIs are tracked
+                             init_templates, # np x 6 array of float32, each row is [xi, yi, x0, y0, w, h]
+                             curr_pois=None, # initial guess of np x 2 array of float32, each row is [xi, yi] for current POI locations
+                             search_range_pixels=None, # np x 2 array of int32, each row is [srp_x_i, srp_y_i] for search range pixels for each template
+                             search_range_factors=1.0): # np x 2 array of float32, each row is [srf_x_i, srf_y_i] for search range factors for each template
     # Ensure init_templates is a NumPy array of float32
     init_templates = np.array(init_templates, dtype=np.float32)
     np_templates = init_templates.shape[0] # Number of templates to track
 
     # If no initial guess for current template positions is provided,
     # assume they are the same as the initial POI locations.
-    if curr_templates is None:
-        curr_templates = init_templates[:, 0:2].copy()
+    if curr_pois is None:
+        curr_pois = init_templates[:, 0:2].copy()
     
     # Initialize an array to store matching coefficients for each template
     coeffs = np.zeros(np_templates)
@@ -300,8 +300,8 @@ def template_match_subpixels(init_img,
             # If it has an unexpected shape, take the first two elements and repeat them for all templates
             search_range_factors = np.tile(search_range_factors[0:2], (np_templates, 1)).astype(np.float32)
 
-    # Create a copy of curr_templates to store the updated (tracked) positions
-    updated_templates = curr_templates.copy()
+    # Create a copy of curr_pois to store the updated (tracked) positions
+    updated_templates = curr_pois.copy()
 
     # Iterate through each template to perform sub-pixel precision template matching
     for i in range(np_templates):
@@ -315,7 +315,7 @@ def template_match_subpixels(init_img,
         template = init_img[y0:y0+h, x0:x0+w].copy()
 
         # Get the current guessed location of the POI in the current image
-        gx, gy = curr_templates[i][0:2]
+        gx, gy = curr_pois[i][0:2]
 
         # Calculate the offset of the POI relative to the template's top-left corner
         # This offset is crucial for translating the matched template position to the POI position
@@ -455,7 +455,7 @@ def unit_test_01():
         init_templates = np.array([tmplt1_values, tmplt2_values], dtype=np.float32).reshape(2, 6)
 
     (new_position, coeffs) = template_match_subpixels(img1, img2, init_templates)
-    curr_templates = new_position
+    curr_pois = new_position
 
     print(f"Tracked point: {new_position[:,0:2]}")
     print(f"Matching coefficient: {coeffs}")
@@ -496,8 +496,8 @@ def unit_test_02():
     init_templates = np.hstack((Xi, Xir)).astype(np.float32)
 
     # call template_match_subpixels
-    curr_templates = init_templates[:, 0:2].copy()  # initial guess is the same as the initial templates
-    (new_position, coeffs) = template_match_subpixels(img1, img2, init_templates, curr_templates)
+    curr_pois = init_templates[:, 0:2].copy()  # initial guess is the same as the initial templates
+    (new_position, coeffs) = template_match_subpixels(img1, img2, init_templates, curr_pois)
 
     print(f"Initial points: \n{init_templates[:,0:6]}\n")
     print(f"Tracked points: \n{new_position[:,0:2]}\n")
@@ -544,7 +544,8 @@ def run_gui_template_match_subpixels_image_sequence():
         "Definition Templates File (csv file path):",
         "Search Range Pixels (scalar, 2-element list, or np array of shape (np_templates, 2)):",
         "Search Range Factors (scalar, 2-element list, or np array of shape (np_templates, 2)):",
-        "Tracked Points (csv file path):"
+        "Tracked Points (csv file path):",
+        "Output directory for drawn tracked results (optional):"
     ]
     datatypes = [
         "image",  # Initial Image
@@ -552,7 +553,8 @@ def run_gui_template_match_subpixels_image_sequence():
         "file",   # Initial Templates File
         "array -1 2",  # Search Range Pixels
         "array -1 2",  # Search Range Factors
-        "filew"   # Tracked Points File
+        "filew",  # Tracked Points File
+        "dir"     # Image Sequence Directory
     ]
     initvalues = [
         "c:/test/initial_image.jpg",  # Initial Image
@@ -560,7 +562,8 @@ def run_gui_template_match_subpixels_image_sequence():
         "c:/test/templates.csv",  # Initial Templates File
         "",  # Search Range Pixels (default to 30 pixels)
         "2.0 0.5, 2.0 0.5, 2.0 0.5",  # Search Range Factors (default to 1.0)
-        "c:/test/tracked_points.csv" # Tracked Points File
+        "c:/test/tracked_points.csv", # Tracked Points File
+        "d:/test/drawn_results/"  # Output directory for drawn tracked results
     ]
     tooltips = [
         "Select the initial image file to use for template matching.\nIt can be an image, e.g., c:/a.jpg\nor a video file with frame index (1-base), e.g., c:/a.mp4 300",
@@ -568,7 +571,8 @@ def run_gui_template_match_subpixels_image_sequence():
         "Select the csv file containing the initial templates (7 columns, each row has poi_names, xi, yi, x0, y0, w, h).",
         "Specify the search range in pixels as a scalar,\n  2-element list,\n  or a NumPy array of shape (np_templates, 2).",
         "If search range in pixels are empty, you need to specify the search range factors\n  as a scalar,\n  2-element list,\n  or a NumPy array of shape (np_templates, 2).",
-        "Select a (new) csv file to save the tracked points.\nIt will be created if it does not exist."
+        "Select a (new) csv file to save the tracked points.\nIt will be created if it does not exist.",
+        "Select the output directory to save the drawn tracked results.\nIf not specified, no results will be drawn."
     ]
     # Call inputdlg3 to get user inputs
     while True:
@@ -584,7 +588,9 @@ def run_gui_template_match_subpixels_image_sequence():
             user_inputs[1] if user_inputs is not None else initvalues[1],  # Image Sequence files
             user_inputs[2] if user_inputs is not None else initvalues[2],  # Initial Templates File
             user_inputs[3] if user_inputs is not None else initvalues[3],  # Search Range Pixels
-            user_inputs[4] if user_inputs is not None else initvalues[4]   # Search Range Factors
+            user_inputs[4] if user_inputs is not None else initvalues[4],  # Search Range Factors
+            user_inputs[5] if user_inputs is not None else initvalues[5],  # Tracked Points File
+            user_inputs[6] if user_inputs is not None else initvalues[6],  # Output directory for drawn results
         ]
         # Extract user inputs
         # init_img 
@@ -710,7 +716,12 @@ def run_gui_template_match_subpixels_image_sequence():
         # create an empty array to store the tracked points 
         num_pois = init_templates.shape[0]  # Number of templates to track
         xi_result = np.ones((num_images, init_templates.shape[0] * 3), dtype=np.float32) * np.nan # shape: (num_images, np_templates, 2)
-        xi_header = ["frame_index,"] + [f"xi_{name}, yi_{name}, tmcoeff_{name}_" for name in poi_names]
+        # make xi_header ['frame_index', 'xi_name1', 'yi_name1', 'tmcoeff_name1', 'xi_name2', 'yi_name2', 'tmcoeff_name2', ...]
+        # where name1, name2, ... are the names of the POIs
+        xi_header = ["frame_index"]  # Header for the CSV file
+        for name in poi_names:
+            xi_header.extend([f"xi_{name}", f"yi_{name}", f"tmcoeff_{name}"])
+#        xi_header = ["frame_index,"] + [f"xi_{name}, yi_{name}, tmcoeff_{name}".split(',') for name in poi_names]  # Header for the CSV file
         # Start timing the loop
         start_time_loop = cv2.getTickCount() 
         # read an image from vid and track
@@ -723,25 +734,94 @@ def run_gui_template_match_subpixels_image_sequence():
                     curr_img = None
             else:
                 # if the image is from a list of image files, read the next image
-                curr_img = cv2.imread(img_seq[0], cv2.IMREAD_COLOR_BGR)
+                curr_img = cv2.imread(img_seq[iframe], cv2.IMREAD_COLOR_BGR)
             # end if len(img_seq) == 1
             # template match with subpixels
             # init_template is hstack of Xi and Xir 
             init_templates = np.hstack((Xi, Xir)).astype(np.float32)
-            updated_templates = Xi.copy()  # Start with the initial templates
-            updated_templates, coeffs = template_match_subpixels(
+            if iframe == 0:
+                guess_poi = init_templates[:, 0:2].copy()  # Initial guess is the same as the initial templates
+            elif iframe >= 1:
+                for ipoi in range(num_pois):
+                    # update the initial templates with the previous frame's tracked points
+                    guess_poi[ipoi, 0:2] = xi_result[iframe - 1, ipoi * 3 + 0:ipoi * 3 + 2]
+            else: # iframe >= 2
+                # linear motion guess
+                for ipoi in range(num_pois):
+                    # update the initial templates with the previous frame's tracked points
+                    guess_poi[ipoi, 0:2] = (-1) * xi_result[iframe - 2, ipoi * 3 + 0:ipoi * 3 + 2] \
+                                         +   2  * xi_result[iframe - 1, ipoi * 3 + 0:ipoi * 3 + 2]
+            # end if iframe == 0
+            tracked_pois, coeffs = template_match_subpixels(
                 init_img=init_img, 
                 curr_img=curr_img, 
                 init_templates=np.array(init_templates, dtype=float),  # Ensure init_templates is a NumPy array of float32
-                curr_templates=np.array(updated_templates, dtype=float), # Use the initial POI locations as the current guess
+                curr_pois=np.array(guess_poi, dtype=float), # Use the initial POI locations as the current guess
                 search_range_pixels=None,  # Use default search range pixels
                 search_range_factors=1.0
             )
             # save result to xi_result
             for ipoi in range(num_pois):
-                xi_result[iframe, ipoi * 3 + 0] = updated_templates[ipoi, 0]  # xi
-                xi_result[iframe, ipoi * 3 + 1] = updated_templates[ipoi, 1]  # yi
+                xi_result[iframe, ipoi * 3 + 0] = tracked_pois[ipoi, 0]  # xi
+                xi_result[iframe, ipoi * 3 + 1] = tracked_pois[ipoi, 1]  # yi
                 xi_result[iframe, ipoi * 3 + 2] = coeffs[ipoi]  # tmcoeff
+            # draw templates on the current image
+            # if user_inputs[5] is a valid directory, draw the tracked points on the current image
+            # the file name is the original image file name with '_tracked' suffix
+            # for example, if the basename of the image file is 'image1.jpg', the tracked image will be 'image1_tracked.jpg'
+            try: # try to draw the tracked points on a new image 
+                import os
+                from drawTemplates3 import drawTemplates3
+                # if user_inputs[6] is a valid directory, draw the tracked points on the current image
+                if len(user_inputs) > 6 and user_inputs[6].strip() and os.path.isdir(user_inputs[6].strip()):
+                    output_dir = user_inputs[6].strip()
+                    # get the basename of the current image file
+                    if len(img_seq) == 1:
+                        # if it is a video file, use the video file name
+                        # for example, if the video file is 'video.mp4', the output video file will be 'video_tracked_frame_%06d.mp4'
+                        output_image_filename_base = os.path.basename(img_seq[0]) + "_tracked_frame_%06d.JPG" % iframe 
+                    else:
+                        # if it is a list of image files, use the current image file name
+                        # for example, if the image file is 'image1.jpg', the output image file will be 'image1_tracked.jpg'
+                        output_image_filename_base = os.path.basename(img_seq[iframe]) + "_tracked" + os.path.splitext(img_seq[iframe])[1]
+                    # end if len(img_seq) == 1
+                    # draw the tracked points on the current image
+                    #   def drawTemplates3(image: np.ndarray, poi=None, poir=None, 
+                    #       poi_names: list = None, draw_options: dict = None) -> np.ndarray:
+                    # updated_poir is the updated poi region (rectangles), 
+                    # which size is (num_pois, 4), integers, that describes the bounding boxes of the new POIs, for example:
+                    # if  init_templates[0] is [150.0, 150.0, 135, 135, 30, 30], 
+                    # and curr_pois[0] is [151.2, 152.6],
+                    # then the updated_poir[0] is [135 + round(151.2 - 150.0), 135 + round(152.6 - 150.0), 30, 30])
+                    updated_poi_poir = np.zeros((num_pois, 4), dtype=int)
+                    poi_names_show = poi_names.copy()
+                    for ipoi in range(num_pois):
+                        # get the current POI location
+                        xi, yi = tracked_pois[ipoi]
+                        # get the initial template bounding box
+                        x0, y0, w, h = init_templates[ipoi, 2:6].astype(int)
+                        # calculate the new bounding box based on the current POI location
+                        updated_poi_poir[ipoi] = [x0 + round(xi - init_templates[ipoi, 0]), 
+                                                   y0 + round(yi - init_templates[ipoi, 1]), w, h]
+                        # update the poi_names with original poi_names + coefficients
+                        poi_names_show[ipoi] = f"{poi_names[ipoi]} ({coeffs[ipoi]:.3f})"
+                    drawn_img = drawTemplates3(
+                        image=curr_img, 
+                        poi=tracked_pois,
+                        poir=updated_poi_poir, 
+                        poi_names=poi_names_show,  
+                    )
+                    # end for ipoi in range(num_pois)
+                    # save the current image with tracked points to the output directory
+                    output_image_path = os.path.join(output_dir, output_image_filename_base)
+                    cv2.imwrite(output_image_path, drawn_img)
+                # end if len(user_inputs) > 5 and user_inputs[5].strip() and os.path.isdir(user_inputs[5].strip())
+            except:
+                if iframe == 0:
+                    print("Error: Failed to draw tracked points on the current image. "
+                          "Please check if the output directory is valid and writable.")
+                pass
+            # end of try to draw the tracked points on a new image
             # check current time 
             curr_time = cv2.getTickCount()
             # print message that the current frame is processed
@@ -777,29 +857,8 @@ def run_gui_template_match_subpixels_image_sequence():
                 writer.writerow(row)
         # end of saving tracked points to a csv file
         # print message that the tracked points are saved
-        print(f"Tracked points saved to: {tracked_points_file}. Number of frames: {num_images}. Number of templates: {num_pois}.")
-
-            
-
-
-
-
-
-        # end for iframe in range(num_images):
-
-            # call template_match_subpixels with init_img, curr_img, init_templates, and curr_templates=None
-            # curr_templates is None, so it will use the initial templates as the current templates                
-
-
-        curr_img = vid.read()
-        
-        vid = cv2.VideoCapture(img_seq[0]) if len(img_seq) == 1 else None
-#        template_match_subpixels(init_img=init_img, 
-#                                 curr_img=img
-
-
-        # print message that the initial templates are loaded
-        print(f"Initial templates loaded from: {init_templates_file}. Number of templates: {init_templates.shape[0]}.")
+        print(f"\nTracked points saved to: {tracked_points_file}. Number of frames: {num_images}. Number of templates: {num_pois}.")
+        break
 
 
 if __name__ == "__main__":
