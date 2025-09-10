@@ -464,7 +464,7 @@ def imshow3(winname: str, img=np.ndarray, winmax: tuple=(1280, 720), interp:int=
             # The format is
             # poi_name, xi, yi, x0, y0, w, h
             # where (xi, yi) is the POI location, and (x0, y0, w, h) is the template rectangle
-            if len(poi_names) == 0 or Xi.shape[0] == 0 or Xir.shape[0] == 0:
+            if len(poi_names) == 0 or len(Xi)== 0 or len(Xir) == 0:
                 print("# No POIs selected. Cannot save to file.")
                 continue
             import os

@@ -66,7 +66,7 @@ def tkcv_stereoCalibrate_from_files(initvalues=None):
     datatypes = ["array 1 -1 ", 
                  "file", "file",
                  "file", "file",
-                 "listbox_h12 " + " ".join(strFlags), "array 1 2", 
+                 "listbox_h20 " + " ".join(strFlags), "array 1 2", 
                  "filew", "filew"] 
     if initvalues is None:
         # default values for the input dialog
@@ -78,14 +78,14 @@ def tkcv_stereoCalibrate_from_files(initvalues=None):
                     "c:/camera_parameters_cam1_local.csv", "c:/camera_parameters_cam2_local.csv"
                     ]
     tooltips = ["Pattern size (corners in x, corners in y, square size in mm)",
-                "Image points of camera 1 (csv file with 2 columns. If they are from 10 pictures of a 12x9 chessboard, there will be 10*12*9= 1080 points)",
-                "Image points of camera 2 (csv file with 2 columns. If they are from 10 pictures of a 12x9 chessboard, there will be 10*12*9= 1080 points)",
-                "Camera 1 parameters (file with single column format: img_width img_height rvec_x rvec_y rvec_z tvec_x tvec_y tvec_z cmat_00 cmat_01 cmat_02 cmat_10 cmat_11 cmat_12 cmat_20 cmat_21 cmat_22 k1 k2 p1 p2 k3 k4 k5 k6 s1 s2 s3 s4 tau_x tau_y)",
-                "Camera 2 parameters (file with single column format: img_width img_height rvec_x rvec_y rvec_z tvec_x tvec_y tvec_z cmat_00 cmat_01 cmat_02 cmat_10 cmat_11 cmat_12 cmat_20 cmat_21 cmat_22 k1 k2 p1 p2 k3 k4 k5 k6 s1 s2 s3 s4 tau_x tau_y)",
+                "Image points of camera 1 (csv file with 2 columns.\n If they are from 10 pictures of a 12x9 chessboard, there will be 10*12*9= 1080 points)",
+                "Image points of camera 2 (csv file with 2 columns.\n If they are from 10 pictures of a 12x9 chessboard, there will be 10*12*9= 1080 points)",
+                "Camera 1 parameters\n (file with single column format: img_width img_height rvec_x rvec_y rvec_z tvec_x tvec_y tvec_z cmat_00 cmat_01 cmat_02 cmat_10 cmat_11 cmat_12 cmat_20 cmat_21 cmat_22 k1 k2 p1 p2 k3 k4 k5 k6 s1 s2 s3 s4 tau_x tau_y)",
+                "Camera 2 parameters\n (file with single column format: img_width img_height rvec_x rvec_y rvec_z tvec_x tvec_y tvec_z cmat_00 cmat_01 cmat_02 cmat_10 cmat_11 cmat_12 cmat_20 cmat_21 cmat_22 k1 k2 p1 p2 k3 k4 k5 k6 s1 s2 s3 s4 tau_x tau_y)",
                 "Flags (cv2.StereoCalibrateFlags)",
                 "Term criteria (count eps)",
-                "Camera 1 output file (to save the camera parameters after calibration, local, extrinsic parameters to be zeros)",
-                "Camera 2 output file (to save the camera parameters after calibration, local, extrinsic parameters is relative to camera 1)"
+                "Camera 1 output file\n (to save the camera parameters after calibration, local, extrinsic parameters to be zeros)",
+                "Camera 2 output file\n (to save the camera parameters after calibration, local, extrinsic parameters is relative to camera 1)"
                 ]
     result = inputdlg3(prompts=prompts, datatypes=datatypes, 
                        initvalues=initvalues, tooltips=tooltips, 
@@ -231,13 +231,13 @@ def tkcv_stereoCalibrate_from_files(initvalues=None):
 
         # calibration step 3
         calib_result = cv2.stereoCalibrate(
-            corners_object_points, 
-            image_points_1,
-            image_points_2,
-            cmat1, dvec1,
-            cmat2, dvec2,
-            img_size_1,
-            flags,
+            corners_object_points, # shape: (num_cb_photos, nCornersX * nCornersY, 3)
+            image_points_1, # shape: (num_cb_photos, nCornersX * nCornersY, 2)
+            image_points_2, # shape: (num_cb_photos, nCornersX * nCornersY, 2)
+            cmat1, dvec1, # shape: (3, 3) and (1, num_coefficients)
+            cmat2, dvec2, # shape: (3, 3) and (1, num_coefficients)
+            img_size_1, # length of list is 2
+            flags, 
             term_criteria
         )
     except:
@@ -264,21 +264,35 @@ def tkcv_stereoCalibrate_from_files(initvalues=None):
         print("Stereo calibration successful.")
         with open(camera_1_output_file, 'w') as f1:
             # write image width and height
-            f1.write("# image width and height\n")
-            f1.write(" %d\n %d\n" % (img_size_1[0], img_size_1[1]))
+            f1.write(" %d\t,# image width\n %d\t# image height\n" % (img_size_1[0], img_size_1[1]))
             # write rvec and tvec for camera 1, which are zeros
-            f1.write("# rvec and tvec for camera 1 (zeros because it is relative to camera 1 itself)\n")
-            f1.write(" 0.0\n 0.0\n 0.0\n 0.0\n 0.0\n 0.0\n")
+            f1.write(" 0.0\t,# rvec_x\n 0.0\t# rvec_y\n 0.0\t# rvec_z\n 0.0\t# tvec_x\n 0.0\t# tvec_y\n 0.0\t# tvec_z\n")
             # write camera matrix (9 values)
-            f1.write("# intrinsic parameters 3x3 camera matrix\n")
-            f1.write("# fx 0 cx 0 fy cy 0 0 1\n")
-            for i in range(9):
-                f1.write(" %.6f\n" % cmat1.flatten()[i])
+            f1.write(" %.6f\t# cmat_11\n" % cmat1[0, 0])
+            f1.write(" %.6f\t# cmat_12\n" % cmat1[0, 1])
+            f1.write(" %.6f\t# cmat_13\n" % cmat1[0, 2])
+            f1.write(" %.6f\t# cmat_21\n" % cmat1[1, 0])
+            f1.write(" %.6f\t# cmat_22\n" % cmat1[1, 1])
+            f1.write(" %.6f\t# cmat_23\n" % cmat1[1, 2])
+            f1.write(" %.6f\t# cmat_31\n" % cmat1[2, 0])
+            f1.write(" %.6f\t# cmat_32\n" % cmat1[2, 1])
+            f1.write(" %.6f\t# cmat_33\n" % cmat1[2, 2])
             # write distortion coefficients (1x num_coefficients)
-            f1.write("# distortion coefficients: k1 k2 p1 p2 k3 k4 k5 k6 s1 s2 s3 s4 taux tauy\n")
-            for i in range(dvec1.size):
-                f1.write(" %.6f\n" % dvec1.flatten()[i])
-            # additional information (camera location relative to camera 1)
+            f1.write(" %.6f\t# k1\n" % dvec1[0, 0])
+            f1.write(" %.6f\t# k2\n" % dvec1[0, 1])
+            f1.write(" %.6f\t# p1\n" % dvec1[0, 2])
+            f1.write(" %.6f\t# p2\n" % dvec1[0, 3])
+            if dvec1.shape[1] > 4: f1.write(" %.6f\t# k3\n" % dvec1[0, 4])
+            if dvec1.shape[1] > 5: f1.write(" %.6f\t# k4\n" % dvec1[0, 5])
+            if dvec1.shape[1] > 6: f1.write(" %.6f\t# k5\n" % dvec1[0, 6])
+            if dvec1.shape[1] > 7: f1.write(" %.6f\t# k6\n" % dvec1[0, 7])
+            if dvec1.shape[1] > 8: f1.write(" %.6f\t# s1\n" % dvec1[0, 8])
+            if dvec1.shape[1] > 9: f1.write(" %.6f\t# s2\n" % dvec1[0, 9])
+            if dvec1.shape[1] > 10: f1.write(" %.6f\t# s3\n" % dvec1[0, 10])
+            if dvec1.shape[1] > 11: f1.write(" %.6f\t# s4\n" % dvec1[0, 11])
+            if dvec1.shape[1] > 12: f1.write(" %.6f\t# taux\n" % dvec1[0, 12])
+            if dvec1.shape[1] > 13: f1.write(" %.6f\t# tauy\n" % dvec1[0, 13])
+            # write additional information (camera location relative to camera 1)
             this_rvec = np.array([0.0, 0.0, 0.0], dtype=np.float32)
             this_tvec = np.array([0.0, 0.0, 0.0], dtype=np.float32)
             this_r44 = np.eye(4, dtype=np.float32)
@@ -289,42 +303,59 @@ def tkcv_stereoCalibrate_from_files(initvalues=None):
             f1.write("# %f %f %f \n" % (this_r44_inv[0, 3], this_r44_inv[1, 3], this_r44_inv[2, 3]))
             # print message
             print("Camera 1 parameters saved to:", camera_1_output_file)  
-        with open(camera_2_output_file, 'w') as f1:
+        with open(camera_2_output_file, 'w') as f2:
             # write image width and height
-            f1.write("# image width and height\n")
-            f1.write(" %d\n %d\n" % (img_size_2[0], img_size_2[1]))
-            # write rvec and tvec for camera 2
-            f1.write("# rvec and tvec for camera 2 (relative to camera 1)\n")
-            rvec = cv2.Rodrigues(R)[0]  # Convert rotation matrix to rotation vector
-            for i in range(3):
-                f1.write(" %.6f\n" % rvec.flatten()[i])
-            for i in range(3):
-                f1.write(" %.6f\n" % T.flatten()[i])
+            f2.write(" %d # image width\n %d # image height\n" % (img_size_2[0], img_size_2[1]))
+            # write rvec and tvec for camera 1, which are zeros
+            rvec = cv2.Rodrigues(R)[0].flatten()
+            tvec = T.flatten()
+            f2.write(" %.6f\t# rvec_x\n" % rvec[0])
+            f2.write(" %.6f\t# rvec_y\n" % rvec[1])
+            f2.write(" %.6f\t# rvec_z\n" % rvec[2])
+            f2.write(" %.6f\t# tvec_x\n" % tvec[0])
+            f2.write(" %.6f\t# tvec_y\n" % tvec[1])
+            f2.write(" %.6f\t# tvec_z\n" % tvec[2])
             # write camera matrix (9 values)
-            f1.write("# intrinsic parameters 3x3 camera matrix\n")
-            f1.write("# fx 0 cx 0 fy cy 0 0 1\n")
-            for i in range(9):
-                f1.write(" %.6f\n" % cmat2.flatten()[i])
+            f2.write(" %.6f\t# cmat_11\n" % cmat2[0, 0])
+            f2.write(" %.6f\t# cmat_12\n" % cmat2[0, 1])
+            f2.write(" %.6f\t# cmat_13\n" % cmat2[0, 2])
+            f2.write(" %.6f\t# cmat_21\n" % cmat2[1, 0])
+            f2.write(" %.6f\t# cmat_22\n" % cmat2[1, 1])
+            f2.write(" %.6f\t# cmat_23\n" % cmat2[1, 2])
+            f2.write(" %.6f\t# cmat_31\n" % cmat2[2, 0])
+            f2.write(" %.6f\t# cmat_32\n" % cmat2[2, 1])
+            f2.write(" %.6f\t# cmat_33\n" % cmat2[2, 2])
             # write distortion coefficients (1x num_coefficients)
-            f1.write("# distortion coefficients: k1 k2 p1 p2 k3 k4 k5 k6 s1 s2 s3 s4 taux tauy\n")
-            for i in range(dvec2.size):
-                f1.write(" %.6f\n" % dvec2.flatten()[i])
-            # additional information (camera location relative to camera 1)
+            f2.write(" %.6f\t# k1\n" % dvec2[0, 0])
+            f2.write(" %.6f\t# k2\n" % dvec2[0, 1])
+            f2.write(" %.6f\t# p1\n" % dvec2[0, 2])
+            f2.write(" %.6f\t# p2\n" % dvec2[0, 3])
+            if dvec2.shape[1] > 4: f2.write(" %.6f\t# k3\n" % dvec2[0, 4])
+            if dvec2.shape[1] > 5: f2.write(" %.6f\t# k4\n" % dvec2[0, 5])
+            if dvec2.shape[1] > 6: f2.write(" %.6f\t# k5\n" % dvec2[0, 6])
+            if dvec2.shape[1] > 7: f2.write(" %.6f\t# k6\n" % dvec2[0, 7])
+            if dvec2.shape[1] > 8: f2.write(" %.6f\t# s1\n" % dvec2[0, 8])
+            if dvec2.shape[1] > 9: f2.write(" %.6f\t# s2\n" % dvec2[0, 9])
+            if dvec2.shape[1] > 10: f2.write(" %.6f\t# s3\n" % dvec2[0, 10])
+            if dvec2.shape[1] > 11: f2.write(" %.6f\t# s4\n" % dvec2[0, 11])
+            if dvec2.shape[1] > 12: f2.write(" %.6f\t# taux\n" % dvec2[0, 12])
+            if dvec2.shape[1] > 13: f2.write(" %.6f\t# tauy\n" % dvec2[0, 13])
+            # write additional information (camera location relative to camera 1)
             this_rvec = rvec.flatten()
-            this_tvec = T.flatten()
+            this_tvec = tvec.flatten()
             this_r44 = np.eye(4, dtype=np.float32)
             this_r44[:3, :3] = cv2.Rodrigues(this_rvec)[0]  # Convert rotation vector to rotation matrix
             this_r44[0:3, 3] = this_tvec
             this_r44_inv = np.linalg.inv(this_r44)
-            f1.write("# camera location relative to camera 1 (4x4 matrix)\n")
-            f1.write("# %f %f %f \n" % (this_r44_inv[0, 3], this_r44_inv[1, 3], this_r44_inv[2, 3]))
+            f2.write("# camera location relative to camera 1 (4x4 matrix)\n")
+            f2.write("# %f %f %f \n" % (this_r44_inv[0, 3], this_r44_inv[1, 3], this_r44_inv[2, 3]))
             # print message
-            print("Camera 2 parameters saved to:", camera_2_output_file)
+            print("Camera 2 parameters saved to:", camera_2_output_file)  
         # end of with open camera_2_output_file
     return calib_result
 
 def brb1_test2():
-    initvalues = ["7 12 7 12 21.310000 21.350000", 
+    initvalues = ["7 12 21.310000 21.350000", 
                   "D:/ExpDataSamples/20220500_Brb/brb1/brb1_cam1_northGusset_calib/brb1_cam1_found_corners_13_photos_7x12_pattern.csv",
                   "D:/ExpDataSamples/20220500_Brb/brb1/brb1_cam2_northGusset_calib/brb1_cam2_found_corners_13_photos_7x12_pattern.csv",
                   "D:/ExpDataSamples/20220500_Brb/brb1/brb1_cam1_northGusset_calib/tkCalib2_chessboard_intrinsic_k1_k2_p1_p2.txt",

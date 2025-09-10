@@ -69,19 +69,22 @@ def drawTemplates3(image: np.ndarray, poi=None, poir=None,
         print("# Warning: drawTemplates3: image must be a numpy.ndarray")
     if image.ndim not in [2, 3]:
         print("# Warning: drawTemplates3: image must be a 2D or 3D numpy array")
-    if poi is None or poir is None or poi_names is None:
+#    if poi is None or poir is None or poi_names is None:
+    if poi is None: # we allow poir or poi_names to be None
         return image
     if isinstance(poi, list):
         poi = np.array(poi, dtype=np.float64)
     if isinstance(poir, list):
         poir = np.array(poir, dtype=np.int32)
-    if not isinstance(poi, np.ndarray) or not isinstance(poir, np.ndarray) or not isinstance(poi_names, list):
+#    if not isinstance(poi, np.ndarray) or not isinstance(poir, np.ndarray) or not isinstance(poi_names, list):
+    if not isinstance(poi, np.ndarray): # we allow poir or poi_names to be None
         return image
-    if poi.shape[0] == 0 or poir.shape[0] == 0 or len(poi_names) == 0:
+#    if poi.shape[0] == 0 or poir.shape[0] == 0 or len(poi_names) == 0:
+    if poi.shape[0] == 0: # we allow poir or poi_names to be None
         return image
-    if poi.shape[0] != poir.shape[0] or poi.shape[0] != len(poi_names):
-        print("# Warning: drawTemplates3: poi, poir and poi_names must have the same number of elements")
-        return image
+#    if poi.shape[0] != poir.shape[0] or poi.shape[0] != len(poi_names):
+#        print("# Warning: drawTemplates3: poi, poir and poi_names must have the same number of elements")
+#        return image
     # Create a copy of the image to draw on
     image_clone = image.copy()
 
@@ -94,7 +97,7 @@ def drawTemplates3(image: np.ndarray, poi=None, poir=None,
     thickness = draw_options.get('thickness', 1)
     lineType = draw_options.get('lineType', cv2.LINE_8)
     fontType = draw_options.get('fontType', cv2.FONT_HERSHEY_SIMPLEX)
-    fontColor = draw_options.get('fontColor', [0, 255, 0])  # Default green for RGB, or 255 for grayscale
+    fontColor = draw_options.get('fontColor', color)  # Default green for RGB, or 255 for grayscale
     fontScale = draw_options.get('fontScale', 1.0)
 
     # Draw each template
@@ -105,12 +108,23 @@ def drawTemplates3(image: np.ndarray, poi=None, poir=None,
             x_center, y_center = poi[i,0], poi[i,1]
             center = (int(x_center+.5), int(y_center+.5))
 
+            # if the color is a list, and the length of the list is the same as poi.shape[0], use the i-th color for the i-th template
+            #  then use the point-dependent color _color to draw the marker
+            if isinstance(color, list) and len(color) == poi.shape[0]:
+                _color = color[i]
+            else:
+                _color = color
+            if isinstance(fontColor, list) and len(fontColor) == poi.shape[0]:
+                _fontColor = fontColor[i]
+            else:
+                _fontColor = fontColor
             # Draw the marker at the center of the template
-            cv2.drawMarker(image_clone, center, color=color, markerType=markerType,
+            cv2.drawMarker(image_clone, center, color=_color, markerType=markerType,
                         markerSize=markerSize, thickness=thickness, line_type=lineType)
             # Draw the template names around at the center of the template
-            cv2.putText(image_clone, poi_names[i], center, fontType,
-                        fontScale, fontColor, thickness)
+            if poi_names is not None and i < len(poi_names):
+                cv2.putText(image_clone, poi_names[i], center, fontType,
+                            fontScale, _fontColor, thickness)
 
     if not poir is None and poir.shape[0] > 0 and poir.shape[1] >= 4:
         for i in range(poir.shape[0]):
